@@ -2,15 +2,15 @@
 
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { Text, Input, Button, Icon } from 'react-native-elements';
-import styles from './styles'; // Apenas para o estilo do label
+import { Input, Button, Icon } from 'react-native-elements';
 import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
 
 export default function StepNewPassword({
     confirm1,
-    setConfirm1, // Prop correta
+    setConfirm1,
     confirm2,
-    setConfirm2, // Prop correta
+    setConfirm2,
     onSave,
     onCancel,
 }) {
@@ -20,13 +20,13 @@ export default function StepNewPassword({
     return (
         <>
             {/* Campo Nova Senha */}
-            <Text style={styles.label}>Nova senha</Text>
             <Input
+                label="Nova senha"
+                labelStyle={typography.body2}
                 placeholder="Crie uma nova senha"
                 secureTextEntry={secureText1}
                 value={confirm1}
-                onChangeText={setConfirm1} // Usando a prop correta
-                autoFocus={true}
+                onChangeText={setConfirm1}
                 rightIcon={
                     <Icon
                         name={secureText1 ? 'visibility-off' : 'visibility'}
@@ -35,15 +35,18 @@ export default function StepNewPassword({
                         onPress={() => setSecureText1(!secureText1)}
                     />
                 }
+                // Adiciona um espaçamento consistente abaixo deste input
+                containerStyle={{ marginBottom: 16 }}
             />
 
             {/* Campo Confirmar Senha */}
-            <Text style={styles.label}>Confirmar nova senha</Text>
             <Input
+                label="Confirmar nova senha"
+                labelStyle={typography.body2}
                 placeholder="Digite a nova senha novamente"
                 secureTextEntry={secureText2}
                 value={confirm2}
-                onChangeText={setConfirm2} // Usando a prop correta
+                onChangeText={setConfirm2}
                 rightIcon={
                     <Icon
                         name={secureText2 ? 'visibility-off' : 'visibility'}

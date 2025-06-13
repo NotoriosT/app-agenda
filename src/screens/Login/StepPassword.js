@@ -3,16 +3,15 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, Input, Button, CheckBox, Icon } from 'react-native-elements';
-import styles from './styles'; // Usado para o estilo do label
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 
 export default function StepPassword({
     cpf,
     senha,
-    setSenha, // Prop correta para atualizar a senha
+    setSenha,
     lembrar,
-    setLembrar, // Prop correta para atualizar o "lembrar-me"
+    setLembrar,
     onLogin,
     onForgot,
 }) {
@@ -25,22 +24,26 @@ export default function StepPassword({
     return (
         <>
             {/* Campo de CPF (desabilitado) */}
-            <Text style={styles.label}>CPF</Text>
             <Input
+                label="CPF"
                 value={cpf}
                 editable={false}
-                inputContainerStyle={{ backgroundColor: colors.background }}
+                inputContainerStyle={{
+                    backgroundColor: colors.background,
+                    marginBottom: 16,
+                }}
                 inputStyle={{ color: colors.textSecondary }}
+                // Estilo para o label, usando o padrão do tema
+                labelStyle={typography.body2}
             />
 
             {/* Campo de Senha */}
-            <Text style={styles.label}>Senha</Text>
             <Input
+                label="Senha"
                 placeholder="Digite sua senha"
                 value={senha}
-                onChangeText={setSenha} // Corrigido: Usando a prop correta
+                onChangeText={setSenha}
                 secureTextEntry={secureText}
-                autoFocus={true}
                 rightIcon={
                     <Icon
                         name={secureText ? 'visibility-off' : 'visibility'}
@@ -49,6 +52,8 @@ export default function StepPassword({
                         onPress={toggleSecureText}
                     />
                 }
+                // Estilo para o label
+                labelStyle={typography.body2}
             />
 
             {/* Opções 'Lembrar-me' e 'Esqueci a senha' */}
@@ -57,19 +62,19 @@ export default function StepPassword({
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: 8,
+                    marginTop: 4, // Espaçamento reduzido
                     marginBottom: 24,
                 }}
             >
                 <CheckBox
                     title="Lembrar-me"
                     checked={lembrar}
-                    onPress={() => setLembrar(!lembrar)} // Corrigido: Usando a prop correta
+                    onPress={() => setLembrar(!lembrar)}
                     containerStyle={{
                         backgroundColor: 'transparent',
                         borderWidth: 0,
-                        marginLeft: -10,
                         padding: 0,
+                        marginLeft: 0,
                     }}
                     textStyle={{
                         ...typography.body2,
@@ -80,7 +85,11 @@ export default function StepPassword({
                 />
                 <TouchableOpacity onPress={onForgot}>
                     <Text
-                        style={{ ...typography.body2, color: colors.primary }}
+                        style={{
+                            ...typography.body2,
+                            color: colors.primary,
+                            fontWeight: 'bold',
+                        }}
                     >
                         Esqueci minha senha
                     </Text>

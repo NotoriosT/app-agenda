@@ -12,9 +12,7 @@ export default function Header() {
 
     return (
         <View style={styles.header}>
-            {/* 2. Substitua o Icon pelo Logo, passando o tamanho responsivo */}
             <Logo width={logoSize} height={logoSize} />
-
             <Text style={styles.title}>Prefeitura de Esteio</Text>
         </View>
     );

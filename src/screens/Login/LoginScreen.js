@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import {
-    View,
     Keyboard,
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
@@ -11,23 +10,21 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
+// Importe todos os seus componentes e hooks
 import Header from './Header';
 import StepCpf from './StepCpf';
 import StepPassword from './StepPassword';
 import StepSms from './StepSms';
 import StepNewPassword from './StepNewPassword';
 import AppMessage from '../../components/AppMessage';
-
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../services/api';
 import * as authApi from '../../services/loginApi';
-
+import api from '../../services/api';
 import styles from './styles';
 
 export default function LoginScreen() {
+    // Seus hooks e estados (sem alterações)
     const { login, sendOtp, verifyOtp, setPasswd } = useAuth();
-
-    // --- Estados ---
     const [cpf, setCpf] = useState('');
     const [senha, setSenha] = useState('');
     const [lembrar, setLembrar] = useState(false);
@@ -39,7 +36,7 @@ export default function LoginScreen() {
     const [msg, setMsg] = useState(null);
     const [visible, setVis] = useState(false);
 
-    // --- Funções do Modal ---
+    // Suas funções de lógica (sem alterações na maioria)
     const openMsg = (m) => {
         setMsg(m);
         setVis(true);
@@ -51,8 +48,6 @@ export default function LoginScreen() {
         type: 'error',
         actions: [{ id: 'close', label: 'Fechar' }],
     });
-
-    // --- Lógica de Navegação ---
     const handleContinueCpf = async () => {
         try {
             const { exists, passwordSet } = await authApi.checkCpf(cpf);
@@ -74,7 +69,6 @@ export default function LoginScreen() {
             openMsg(errMsg(err, 'Falha na verificação do CPF'));
         }
     };
-
     const handleSendOtp = async (isInitialFlow = false) => {
         try {
             await sendOtp(cpf);
@@ -90,7 +84,6 @@ export default function LoginScreen() {
             openMsg(errMsg(err, 'Erro ao enviar código'));
         }
     };
-
     const handleLogin = async () => {
         try {
             await login(cpf, senha);
@@ -98,7 +91,6 @@ export default function LoginScreen() {
             openMsg(errMsg(err, 'CPF ou senha inválidos'));
         }
     };
-
     const handleVerifySms = async () => {
         try {
             const { resetToken } = await verifyOtp(cpf, codigo);
@@ -108,7 +100,6 @@ export default function LoginScreen() {
             openMsg(errMsg(err, 'Código inválido, tente novamente'));
         }
     };
-
     const handleSetPassword = async () => {
         if (!confirm1 || confirm1 !== confirm2) {
             return openMsg({
@@ -122,8 +113,7 @@ export default function LoginScreen() {
             api.defaults.headers.common.Authorization = `Bearer ${resetToken}`;
             await setPasswd(confirm1);
             delete api.defaults.headers.common.Authorization;
-
-            setSenha(''); // Limpa o campo de senha para o próximo passo
+            setSenha('');
             openMsg({
                 title: 'Senha definida',
                 body: 'Agora você já pode fazer login.',
@@ -132,7 +122,6 @@ export default function LoginScreen() {
                     {
                         id: 'goToLogin',
                         label: 'Ir para login',
-                        // Ação a ser executada quando o botão for clicado
                         action: () => {
                             setStep('password');
                             closeMsg();
@@ -144,94 +133,88 @@ export default function LoginScreen() {
             openMsg(errMsg(err, 'Não foi possível definir a senha'));
         }
     };
-
-    const backToPassword = () => setStep('password');
     const cancelNewPass = () => {
         setConfirm1('');
         setConfirm2('');
         setCodigo('');
-        setStep('password');
+        setStep('cpf');
+    };
+    const handleMessageAction = (actionId) => {
+        const action = msg?.actions?.find((a) => a.id === actionId);
+        if (action && typeof action.action === 'function') {
+            action.action();
+        } else {
+            closeMsg();
+        }
     };
 
     /**
      * CORREÇÃO APLICADA AQUI
-     * Esta função agora encontra a ação correta pelo ID e a executa.
+     * Esta função agora reinicia o fluxo para a etapa de CPF.
      */
-    const handleMessageAction = (actionId) => {
-        const action = msg?.actions?.find((a) => a.id === actionId);
-
-        if (action && typeof action.action === 'function') {
-            action.action(); // Executa a função personalizada da ação
-        } else {
-            closeMsg(); // Comportamento padrão: apenas fecha o modal
-        }
+    const backToCpf = () => {
+        setCodigo('');
+        setStep('cpf');
     };
 
-    // --- Renderização ---
     return (
         <KeyboardAvoidingView
-            style={{
-                flex: 1,
-                backgroundColor: styles.container.backgroundColor,
-            }}
+            style={styles.avoiding}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <ScrollView
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        justifyContent: 'center',
-                    }}
+                    contentContainerStyle={styles.container}
                     keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
                 >
-                    <View style={styles.container}>
-                        <Header />
+                    <Header />
 
-                        <Animated.View
-                            entering={FadeIn}
-                            exiting={FadeOut}
-                            style={styles.content}
-                        >
-                            {step === 'cpf' && (
-                                <StepCpf
-                                    cpf={cpf}
-                                    setCpf={setCpf}
-                                    onContinue={handleContinueCpf}
-                                />
-                            )}
-                            {step === 'password' && (
-                                <StepPassword
-                                    cpf={cpf}
-                                    senha={senha}
-                                    setSenha={setSenha}
-                                    lembrar={lembrar}
-                                    setLembrar={setLembrar}
-                                    onLogin={handleLogin}
-                                    onForgot={() => setStep('sms')}
-                                />
-                            )}
-                            {step === 'sms' && (
-                                <StepSms
-                                    cpf={cpf}
-                                    codigo={codigo}
-                                    setCodigo={setCodigo}
-                                    onSendOtp={handleSendOtp}
-                                    onVerify={handleVerifySms}
-                                    onBack={backToPassword}
-                                />
-                            )}
-                            {step === 'newPass' && (
-                                <StepNewPassword
-                                    confirm1={confirm1}
-                                    setConfirm1={setConfirm1}
-                                    confirm2={confirm2}
-                                    setConfirm2={setConfirm2}
-                                    onSave={handleSetPassword}
-                                    onCancel={cancelNewPass}
-                                />
-                            )}
-                        </Animated.View>
-                    </View>
+                    <Animated.View
+                        entering={FadeIn}
+                        exiting={FadeOut}
+                        style={styles.content}
+                    >
+                        {step === 'cpf' && (
+                            <StepCpf
+                                cpf={cpf}
+                                setCpf={setCpf}
+                                onContinue={handleContinueCpf}
+                            />
+                        )}
+                        {step === 'password' && (
+                            <StepPassword
+                                cpf={cpf}
+                                senha={senha}
+                                setSenha={setSenha}
+                                lembrar={lembrar}
+                                setLembrar={setLembrar}
+                                onLogin={handleLogin}
+                                onForgot={() => setStep('sms')}
+                            />
+                        )}
+                        {step === 'sms' && (
+                            // A prop 'onBack' agora chama a função correta
+                            <StepSms
+                                cpf={cpf}
+                                codigo={codigo}
+                                setCodigo={setCodigo}
+                                onSendOtp={handleSendOtp}
+                                onVerify={handleVerifySms}
+                                onBack={backToCpf}
+                            />
+                        )}
+                        {step === 'newPass' && (
+                            <StepNewPassword
+                                confirm1={confirm1}
+                                setConfirm1={setConfirm1}
+                                confirm2={confirm2}
+                                setConfirm2={setConfirm2}
+                                onSave={handleSetPassword}
+                                onCancel={cancelNewPass}
+                            />
+                        )}
+                    </Animated.View>
                 </ScrollView>
             </TouchableWithoutFeedback>
 
@@ -243,4 +226,3 @@ export default function LoginScreen() {
         </KeyboardAvoidingView>
     );
 }
- 
