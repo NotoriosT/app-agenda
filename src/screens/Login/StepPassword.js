@@ -1,72 +1,94 @@
 // src/screens/Login/StepPassword.jsx
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Input, Button, CheckBox, Text } from 'react-native-elements';
+import React, { useState } from 'react';
+import { View, TouchableOpacity } from 'react-native';
+import { Text, Input, Button, CheckBox, Icon } from 'react-native-elements';
+import styles from './styles'; // Usado para o estilo do label
+import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
 
 export default function StepPassword({
-                                         cpf,
-                                         senha,
-                                         lembrar,
-                                         onChangeSenha,
-                                         onToggleLembrar,
-                                         onLogin,
-                                         onForgot
-                                     }) {
+    cpf,
+    senha,
+    setSenha, // Prop correta para atualizar a senha
+    lembrar,
+    setLembrar, // Prop correta para atualizar o "lembrar-me"
+    onLogin,
+    onForgot,
+}) {
+    const [secureText, setSecureText] = useState(true);
+
+    const toggleSecureText = () => {
+        setSecureText(!secureText);
+    };
+
     return (
-        <View style={styles.wrapper}>
+        <>
+            {/* Campo de CPF (desabilitado) */}
+            <Text style={styles.label}>CPF</Text>
             <Input
-                label="CPF"
                 value={cpf}
                 editable={false}
-                containerStyle={styles.input}
+                inputContainerStyle={{ backgroundColor: colors.background }}
+                inputStyle={{ color: colors.textSecondary }}
             />
+
+            {/* Campo de Senha */}
+            <Text style={styles.label}>Senha</Text>
             <Input
-                label="Senha"
                 placeholder="Digite sua senha"
-                secureTextEntry
                 value={senha}
-                onChangeText={onChangeSenha}
-                containerStyle={styles.input}
+                onChangeText={setSenha} // Corrigido: Usando a prop correta
+                secureTextEntry={secureText}
+                autoFocus={true}
+                rightIcon={
+                    <Icon
+                        name={secureText ? 'visibility-off' : 'visibility'}
+                        type="material"
+                        color={colors.placeholder}
+                        onPress={toggleSecureText}
+                    />
+                }
             />
-            <CheckBox
-                title="Lembrar-me"
-                checked={lembrar}
-                onPress={onToggleLembrar}
-                containerStyle={styles.checkbox}
-            />
-            <Text style={styles.link} onPress={onForgot}>
-                Esqueceu a senha?
-            </Text>
-            <Button
-                title="Entrar"
-                onPress={onLogin}
-                buttonStyle={styles.button}
-            />
-        </View>
+
+            {/* Opções 'Lembrar-me' e 'Esqueci a senha' */}
+            <View
+                style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: 8,
+                    marginBottom: 24,
+                }}
+            >
+                <CheckBox
+                    title="Lembrar-me"
+                    checked={lembrar}
+                    onPress={() => setLembrar(!lembrar)} // Corrigido: Usando a prop correta
+                    containerStyle={{
+                        backgroundColor: 'transparent',
+                        borderWidth: 0,
+                        marginLeft: -10,
+                        padding: 0,
+                    }}
+                    textStyle={{
+                        ...typography.body2,
+                        color: colors.textSecondary,
+                        fontWeight: 'normal',
+                    }}
+                    checkedColor={colors.primary}
+                />
+                <TouchableOpacity onPress={onForgot}>
+                    <Text
+                        style={{ ...typography.body2, color: colors.primary }}
+                    >
+                        Esqueci minha senha
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Botão de Login */}
+            <Button title="Entrar" onPress={onLogin} />
+        </>
     );
 }
-
-const styles = StyleSheet.create({
-    wrapper: {
-        width: '100%',
-        marginVertical: 16
-    },
-    input: {
-        marginBottom: 16
-    },
-    checkbox: {
-        backgroundColor: 'transparent',
-        borderWidth: 0,
-        marginBottom: 8
-    },
-    link: {
-        color: '#2089dc',
-        textAlign: 'right',
-        marginBottom: 24
-    },
-    button: {
-        borderRadius: 8,
-        paddingVertical: 12
-    }
-});

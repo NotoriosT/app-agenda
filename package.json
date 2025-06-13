@@ -28,10 +28,12 @@
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-mask-input": "^1.2.3",
     "react-native-reanimated": "~3.17.4",
-    "react-native-vector-icons": "^10.2.0"
+    "react-native-vector-icons": "^10.2.0",
+    "react-native-svg": "15.11.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "typescript": "~5.8.3"
   },
   "private": true
 }

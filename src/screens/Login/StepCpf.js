@@ -1,50 +1,25 @@
+// src/screens/Login/StepCpf.jsx
+
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Input, Button } from 'react-native-elements';
+import { Text } from 'react-native-elements';
+import MaskInput, { Masks } from 'react-native-mask-input';
+import PrimaryButton from '../../components/PrimaryButton';
+import styles from './styles';
 
-export default function StepCpf({ cpf, onChange, onContinue }) {
-    // Log inicial do valor de CPF quando o componente renderiza
-    console.log('[StepCpf] Render - CPF atual:', cpf);
-
-    const handleChange = (value) => {
-        console.log('[StepCpf] onChangeText:', value);
-        onChange(value);
-    };
-
-    const handleContinue = () => {
-        console.log('[StepCpf] onContinue pressed - CPF final:', cpf);
-        onContinue();
-    };
-
+export default function StepCpf({ cpf, setCpf, onContinue }) {
     return (
-        <View style={styles.wrapper}>
-            <Input
-                label="CPF"
+        <>
+            <Text style={styles.label}>CPF</Text>
+            <MaskInput
                 value={cpf}
-                onChangeText={handleChange}
+                onChangeText={(masked) => setCpf(masked)}
+                mask={Masks.BRL_CPF}
                 keyboardType="numeric"
-                placeholder="___.___.___-__"
-                containerStyle={styles.input}
+                placeholder="Digite seu CPF"
+                style={styles.maskInput}
+                placeholderTextColor="#9E9E9E"
             />
-            <Button
-                title="Continuar"
-                onPress={handleContinue}
-                buttonStyle={styles.button}
-            />
-        </View>
+            <PrimaryButton title="Continuar" onPress={onContinue} />
+        </>
     );
 }
-
-const styles = StyleSheet.create({
-    wrapper: {
-        width: '100%',
-        marginVertical: 16
-    },
-    input: {
-        marginBottom: 24
-    },
-    button: {
-        borderRadius: 8,
-        paddingVertical: 12
-    }
-});

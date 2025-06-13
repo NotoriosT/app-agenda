@@ -1,58 +1,68 @@
 // src/screens/Login/StepNewPassword.jsx
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Input, Button } from 'react-native-elements';
+import React, { useState } from 'react';
+import { View } from 'react-native';
+import { Text, Input, Button, Icon } from 'react-native-elements';
+import styles from './styles'; // Apenas para o estilo do label
+import { colors } from '../../theme/colors';
 
 export default function StepNewPassword({
-                                            confirm1,
-                                            confirm2,
-                                            onChangeConfirm1,
-                                            onChangeConfirm2,
-                                            onSave,
-                                            onCancel
-                                        }) {
+    confirm1,
+    setConfirm1, // Prop correta
+    confirm2,
+    setConfirm2, // Prop correta
+    onSave,
+    onCancel,
+}) {
+    const [secureText1, setSecureText1] = useState(true);
+    const [secureText2, setSecureText2] = useState(true);
+
     return (
-        <View style={styles.wrapper}>
+        <>
+            {/* Campo Nova Senha */}
+            <Text style={styles.label}>Nova senha</Text>
             <Input
-                label="Nova senha"
-                secureTextEntry
+                placeholder="Crie uma nova senha"
+                secureTextEntry={secureText1}
                 value={confirm1}
-                onChangeText={onChangeConfirm1}
-                containerStyle={styles.input}
+                onChangeText={setConfirm1} // Usando a prop correta
+                autoFocus={true}
+                rightIcon={
+                    <Icon
+                        name={secureText1 ? 'visibility-off' : 'visibility'}
+                        type="material"
+                        color={colors.placeholder}
+                        onPress={() => setSecureText1(!secureText1)}
+                    />
+                }
             />
+
+            {/* Campo Confirmar Senha */}
+            <Text style={styles.label}>Confirmar nova senha</Text>
             <Input
-                label="Confirmar senha"
-                secureTextEntry
+                placeholder="Digite a nova senha novamente"
+                secureTextEntry={secureText2}
                 value={confirm2}
-                onChangeText={onChangeConfirm2}
-                containerStyle={styles.input}
+                onChangeText={setConfirm2} // Usando a prop correta
+                rightIcon={
+                    <Icon
+                        name={secureText2 ? 'visibility-off' : 'visibility'}
+                        type="material"
+                        color={colors.placeholder}
+                        onPress={() => setSecureText2(!secureText2)}
+                    />
+                }
             />
-            <Button
-                title="Salvar senha"
-                onPress={onSave}
-                buttonStyle={[styles.button, { marginBottom: 12 }]}
-            />
-            <Button
-                title="Cancelar"
-                type="outline"
-                onPress={onCancel}
-                buttonStyle={styles.button}
-            />
-        </View>
+
+            {/* Botões de Ação */}
+            <View style={{ marginTop: 24 }}>
+                <Button
+                    title="Salvar senha"
+                    onPress={onSave}
+                    containerStyle={{ marginBottom: 12 }}
+                />
+                <Button title="Cancelar" type="outline" onPress={onCancel} />
+            </View>
+        </>
     );
 }
-
-const styles = StyleSheet.create({
-    wrapper: {
-        width: '100%',
-        marginVertical: 16
-    },
-    input: {
-        marginBottom: 16
-    },
-    button: {
-        borderRadius: 8,
-        paddingVertical: 12
-    }
-});

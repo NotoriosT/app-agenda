@@ -2,94 +2,106 @@
 
 import React, { useState } from 'react';
 import {
-    SafeAreaView,
+    View,
+    Keyboard,
+    TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    View,
-    StyleSheet
 } from 'react-native';
-import { useAuth } from '../../contexts/AuthContext';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+
 import Header from './Header';
 import StepCpf from './StepCpf';
 import StepPassword from './StepPassword';
 import StepSms from './StepSms';
 import StepNewPassword from './StepNewPassword';
 import AppMessage from '../../components/AppMessage';
-import api from "../../services/api";
-import * as authApi from "../../services/loginApi";
+
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
+import * as authApi from '../../services/loginApi';
+
+import styles from './styles';
 
 export default function LoginScreen() {
     const { login, sendOtp, verifyOtp, setPasswd } = useAuth();
+
+    // --- Estados ---
+    const [cpf, setCpf] = useState('');
+    const [senha, setSenha] = useState('');
+    const [lembrar, setLembrar] = useState(false);
+    const [codigo, setCodigo] = useState('');
+    const [confirm1, setConfirm1] = useState('');
+    const [confirm2, setConfirm2] = useState('');
     const [step, setStep] = useState('cpf');
-    const [form, setForm] = useState({
-        cpf: '',
-        senha: '',
-        lembrar: false,
-        codigo: '',
-        confirm1: '',
-        confirm2: ''
-    });
     const [resetToken, setResetToken] = useState(null);
     const [msg, setMsg] = useState(null);
     const [visible, setVis] = useState(false);
 
-    const openMsg = m => { setMsg(m); setVis(true); };
+    // --- Funções do Modal ---
+    const openMsg = (m) => {
+        setMsg(m);
+        setVis(true);
+    };
     const closeMsg = () => setVis(false);
-
-    const errMsg = (err, fallback) => ({
+    const errMsg = (err, fallback = 'Erro inesperado') => ({
         title: 'Erro',
         body: err?.response?.data?.message ?? fallback,
         type: 'error',
-        actions: [{ id: 'close', label: 'Fechar' }]
+        actions: [{ id: 'close', label: 'Fechar' }],
     });
 
-    // ── Handlers ────────────────────────────────────────────────────────────
+    // --- Lógica de Navegação ---
     const handleContinueCpf = async () => {
-        console.log('[DEBUG] baseURL ->', api.defaults.baseURL);
-
         try {
-            const { exists, passwordSet } = await authApi.checkCpf(form.cpf);
+            const { exists, passwordSet } = await authApi.checkCpf(cpf);
             if (!exists) {
                 return openMsg({
                     title: 'CPF não encontrado',
-                    body: 'Cadastre-se primeiro.',
+                    body: 'Este CPF não está cadastrado.',
                     type: 'error',
-                    actions: [{ id: 'close', label: 'Ok' }]
+                    actions: [{ id: 'close', label: 'Ok' }],
                 });
             }
-            setStep(passwordSet ? 'password' : 'sms');
+            if (passwordSet) {
+                setStep('password');
+            } else {
+                await handleSendOtp(true);
+                setStep('sms');
+            }
         } catch (err) {
             openMsg(errMsg(err, 'Falha na verificação do CPF'));
         }
     };
 
-    const handleLogin = async () => {
+    const handleSendOtp = async (isInitialFlow = false) => {
         try {
-            await login(form.cpf, form.senha, form.lembrar);
-            // redirecionamento via AuthProvider
-        } catch (err) {
-            openMsg(errMsg(err, 'CPF ou senha inválidos'));
-        }
-    };
-
-    const handleSendOtp = async () => {
-        try {
-            await sendOtp(form.cpf);
-            openMsg({
-                title: 'Código enviado',
-                body: 'Verifique seu WhatsApp.',
-                type: 'success',
-                actions: [{ id: 'close', label: 'Ok' }]
-            });
+            await sendOtp(cpf);
+            if (!isInitialFlow) {
+                openMsg({
+                    title: 'Código enviado',
+                    body: 'Verifique seu WhatsApp.',
+                    type: 'success',
+                    actions: [{ id: 'close', label: 'Ok' }],
+                });
+            }
         } catch (err) {
             openMsg(errMsg(err, 'Erro ao enviar código'));
         }
     };
 
-    const handleVerify = async () => {
+    const handleLogin = async () => {
         try {
-            const { resetToken } = await verifyOtp(form.cpf, form.codigo);
+            await login(cpf, senha);
+        } catch (err) {
+            openMsg(errMsg(err, 'CPF ou senha inválidos'));
+        }
+    };
+
+    const handleVerifySms = async () => {
+        try {
+            const { resetToken } = await verifyOtp(cpf, codigo);
             setResetToken(resetToken);
             setStep('newPass');
         } catch (err) {
@@ -97,109 +109,138 @@ export default function LoginScreen() {
         }
     };
 
-    const handleSave = async () => {
-        if (!form.confirm1 || form.confirm1 !== form.confirm2) {
+    const handleSetPassword = async () => {
+        if (!confirm1 || confirm1 !== confirm2) {
             return openMsg({
                 title: 'Senhas diferentes',
                 body: 'Digite a mesma senha nos dois campos.',
                 type: 'error',
-                actions: [{ id: 'close', label: 'Fechar' }]
+                actions: [{ id: 'close', label: 'Fechar' }],
             });
         }
         try {
             api.defaults.headers.common.Authorization = `Bearer ${resetToken}`;
-            await setPasswd(form.confirm1);
+            await setPasswd(confirm1);
             delete api.defaults.headers.common.Authorization;
 
+            setSenha(''); // Limpa o campo de senha para o próximo passo
             openMsg({
                 title: 'Senha definida',
                 body: 'Agora você já pode fazer login.',
                 type: 'success',
-                actions: [{ id: 'close', label: 'Ir para login' }]
+                actions: [
+                    {
+                        id: 'goToLogin',
+                        label: 'Ir para login',
+                        // Ação a ser executada quando o botão for clicado
+                        action: () => {
+                            setStep('password');
+                            closeMsg();
+                        },
+                    },
+                ],
             });
-            setForm({ ...form, senha: '' });
-            setStep('password');
         } catch (err) {
             openMsg(errMsg(err, 'Não foi possível definir a senha'));
         }
     };
 
-    // ── Render ───────────────────────────────────────────────────────────────
+    const backToPassword = () => setStep('password');
+    const cancelNewPass = () => {
+        setConfirm1('');
+        setConfirm2('');
+        setCodigo('');
+        setStep('password');
+    };
+
+    /**
+     * CORREÇÃO APLICADA AQUI
+     * Esta função agora encontra a ação correta pelo ID e a executa.
+     */
+    const handleMessageAction = (actionId) => {
+        const action = msg?.actions?.find((a) => a.id === actionId);
+
+        if (action && typeof action.action === 'function') {
+            action.action(); // Executa a função personalizada da ação
+        } else {
+            closeMsg(); // Comportamento padrão: apenas fecha o modal
+        }
+    };
+
+    // --- Renderização ---
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <KeyboardAvoidingView
-                style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-            >
+        <KeyboardAvoidingView
+            style={{
+                flex: 1,
+                backgroundColor: styles.container.backgroundColor,
+            }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <ScrollView
-                    contentContainerStyle={styles.container}
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        justifyContent: 'center',
+                    }}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <Header />
+                    <View style={styles.container}>
+                        <Header />
 
-                    <View style={styles.content}>
-                        {step === 'cpf' && (
-                            <StepCpf
-                                cpf={form.cpf}
-                                onChange={cpf => setForm({ ...form, cpf })}
-                                onContinue={handleContinueCpf}
-                            />
-                        )}
-                        {step === 'password' && (
-                            <StepPassword
-                                cpf={form.cpf}
-                                senha={form.senha}
-                                lembrar={form.lembrar}
-                                onChangeSenha={senha => setForm({ ...form, senha })}
-                                onToggleLembrar={() => setForm({ ...form, lembrar: !form.lembrar })}
-                                onLogin={handleLogin}
-                                onForgot={() => setStep('sms')}
-                            />
-                        )}
-                        {step === 'sms' && (
-                            <StepSms
-                                cpf={form.cpf}
-                                codigo={form.codigo}
-                                onChangeCodigo={codigo => setForm({ ...form, codigo })}
-                                onSendOtp={handleSendOtp}
-                                onVerify={handleVerify}
-                                onBack={() => setStep('password')}
-                            />
-                        )}
-                        {step === 'newPass' && (
-                            <StepNewPassword
-                                confirm1={form.confirm1}
-                                confirm2={form.confirm2}
-                                onChangeConfirm1={confirm1 => setForm({ ...form, confirm1 })}
-                                onChangeConfirm2={confirm2 => setForm({ ...form, confirm2 })}
-                                onSave={handleSave}
-                                onCancel={() => setStep('password')}
-                            />
-                        )}
+                        <Animated.View
+                            entering={FadeIn}
+                            exiting={FadeOut}
+                            style={styles.content}
+                        >
+                            {step === 'cpf' && (
+                                <StepCpf
+                                    cpf={cpf}
+                                    setCpf={setCpf}
+                                    onContinue={handleContinueCpf}
+                                />
+                            )}
+                            {step === 'password' && (
+                                <StepPassword
+                                    cpf={cpf}
+                                    senha={senha}
+                                    setSenha={setSenha}
+                                    lembrar={lembrar}
+                                    setLembrar={setLembrar}
+                                    onLogin={handleLogin}
+                                    onForgot={() => setStep('sms')}
+                                />
+                            )}
+                            {step === 'sms' && (
+                                <StepSms
+                                    cpf={cpf}
+                                    codigo={codigo}
+                                    setCodigo={setCodigo}
+                                    onSendOtp={handleSendOtp}
+                                    onVerify={handleVerifySms}
+                                    onBack={backToPassword}
+                                />
+                            )}
+                            {step === 'newPass' && (
+                                <StepNewPassword
+                                    confirm1={confirm1}
+                                    setConfirm1={setConfirm1}
+                                    confirm2={confirm2}
+                                    setConfirm2={setConfirm2}
+                                    onSave={handleSetPassword}
+                                    onCancel={cancelNewPass}
+                                />
+                            )}
+                        </Animated.View>
                     </View>
-
-                    <AppMessage visible={visible} message={msg} onAction={closeMsg} />
                 </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+            </TouchableWithoutFeedback>
+
+            <AppMessage
+                visible={visible}
+                message={msg}
+                onAction={handleMessageAction}
+            />
+        </KeyboardAvoidingView>
     );
 }
-
-const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#fff'
-    },
-    flex: { flex: 1 },
-    container: {
-        flexGrow: 1,
-        padding: 24,
-        justifyContent: 'center'
-    },
-    content: {
-        width: '100%',
-        maxWidth: 400,
-        alignSelf: 'center'
-    }
-});
+ 
