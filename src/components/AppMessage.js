@@ -1,36 +1,30 @@
+// src/components/AppMessage.js
+
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Overlay, Text, Button, Icon } from 'react-native-elements';
-import { colors } from '../theme/colors'; // precisa ter primary & primaryLight
+import { colors } from '../theme/colors';
+import { typography } from '../theme/typography';
 
-/* ícones por tipo de mensagem */
+// Ícones atualizados com as cores do tema
 const iconsByType = {
-    error:   { name: 'error',        color: '#D32F2F' },
-    success: { name: 'check-circle', color: '#2E7D32' },
-    info:    { name: 'info',         color: colors.primary }
+    error:   { name: 'error',        color: colors.error },
+    success: { name: 'check-circle', color: colors.secondary },
+    info:    { name: 'info',         color: colors.primaryMedium }
 };
-
-const neutral = '#607D8B';
 
 export default function AppMessage({ visible, message, onAction }) {
     if (!message) return null;
 
-    /* valores-padrão caso o chamador mande algo parcial */
     const {
         title   = 'Aviso',
         body    = '',
         type    = 'info',
-        actions = [{ id: 'close', label: 'Fechar' }]
+        // A ação padrão agora é um botão de contorno
+        actions = [{ id: 'close', label: 'Fechar', type: 'outline' }]
     } = message;
 
     const icon = iconsByType[type] || iconsByType.info;
-
-    /* cor do botão por id */
-    const colorFor = (id) => {
-        if (id === 'findUbs') return colors.primary;
-        if (id === 'close')   return colors.primaryLight;
-        return neutral;
-    };
 
     return (
         <Overlay
@@ -48,13 +42,11 @@ export default function AppMessage({ visible, message, onAction }) {
                     <Button
                         key={a.id}
                         title={a.label}
-                        type="solid"
-                        buttonStyle={[
-                            styles.button,
-                            { backgroundColor: colorFor(a.id) }
-                        ]}
-                        titleStyle={{ fontWeight: '600' }}
+                        // O tipo do botão (solid/outline) vem da própria ação
+                        type={a.type || 'solid'}
                         onPress={() => onAction(a.id)}
+                        // Os estilos agora vêm do tema global, mas podemos adicionar margens
+                        containerStyle={{ width: '100%', marginTop: 8 }}
                     />
                 ))}
             </View>
@@ -64,35 +56,29 @@ export default function AppMessage({ visible, message, onAction }) {
 
 const styles = StyleSheet.create({
     card: {
-        width: 300,
+        width: '85%',
+        maxWidth: 340,
         borderRadius: 20,
         padding: 0,
-        backgroundColor: '#F5F5F7',
+        backgroundColor: colors.white,
         shadowColor: '#000',
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.1,
         shadowOffset: { width: 0, height: 4 },
         shadowRadius: 10,
-        elevation: 6
+        elevation: 8,
     },
     content: { padding: 24, alignItems: 'center' },
-    icon:    { marginBottom: 8 },
+    icon:    { marginBottom: 12 },
     title: {
-        fontSize: 18,
-        fontWeight: '700',
+        ...typography.h3,
+        color: colors.text,
         textAlign: 'center',
-        color: '#212121',
-        marginBottom: 4
+        marginBottom: 8,
     },
     body: {
-        fontSize: 14,
-        color: '#424242',
+        ...typography.body2,
+        color: colors.textSecondary,
         textAlign: 'center',
-        marginBottom: 16
+        marginBottom: 24,
     },
-    button: {
-        alignSelf: 'stretch',
-        borderRadius: 12,
-        height: 44,
-        marginTop: 6
-    }
 });

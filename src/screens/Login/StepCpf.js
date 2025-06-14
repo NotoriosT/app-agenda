@@ -16,16 +16,14 @@ export default function StepCpf({ cpf, setCpf, onContinue }) {
                 keyboardType="numeric"
                 value={cpf}
                 onChangeText={setCpf}
-                // Integra o MaskInput diretamente no Input do React Native Elements
                 InputComponent={MaskInput}
-                // Passa a prop 'mask' para o componente MaskInput
                 mask={Masks.BRL_CPF}
             />
 
             <PrimaryButton
                 title="Continuar"
                 onPress={onContinue}
-                containerStyle={{ marginTop: 24 }}
+                containerStyle={{ marginTop: 32 }} // Espaçamento padrão aplicado
             />
         </>
     );

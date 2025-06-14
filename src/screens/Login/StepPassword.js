@@ -23,21 +23,15 @@ export default function StepPassword({
 
     return (
         <>
-            {/* Campo de CPF (desabilitado) */}
             <Input
                 label="CPF"
                 value={cpf}
                 editable={false}
-                inputContainerStyle={{
-                    backgroundColor: colors.background,
-                    marginBottom: 16,
-                }}
+                inputContainerStyle={{ backgroundColor: colors.background }}
+                containerStyle={{ marginBottom: 8 }}
                 inputStyle={{ color: colors.textSecondary }}
-                // Estilo para o label, usando o padrão do tema
                 labelStyle={typography.body2}
             />
-
-            {/* Campo de Senha */}
             <Input
                 label="Senha"
                 placeholder="Digite sua senha"
@@ -52,18 +46,15 @@ export default function StepPassword({
                         onPress={toggleSecureText}
                     />
                 }
-                // Estilo para o label
                 labelStyle={typography.body2}
             />
-
-            {/* Opções 'Lembrar-me' e 'Esqueci a senha' */}
             <View
                 style={{
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: 4, // Espaçamento reduzido
-                    marginBottom: 24,
+                    marginTop: 4,
+                    marginBottom: 32, // Espaçamento padrão aplicado
                 }}
             >
                 <CheckBox
@@ -95,8 +86,6 @@ export default function StepPassword({
                     </Text>
                 </TouchableOpacity>
             </View>
-
-            {/* Botão de Login */}
             <Button title="Entrar" onPress={onLogin} />
         </>
     );
