@@ -1,70 +1,62 @@
 // src/screens/Home/HomeScreen.js
-import React from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
-import { Text, Card, Badge }         from 'react-native-elements';
-import { format }  from 'date-fns';
-import ptBR        from 'date-fns/locale/pt-BR';
-import Icon        from 'react-native-vector-icons/MaterialIcons';
+
+import React, { useState } from 'react';
+import { View, FlatList, StatusBar } from 'react-native';
+import { Text } from 'react-native-elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // 1. Importar o hook
 
 import { useAuth } from '../../contexts/AuthContext';
-import parseJwt    from '../../utils/parseJwt';      // <-- NOVO
+import parseJwt from '../../utils/parseJwt';
+import Logo from '../../components/Logo';
+import styles from './styles';
+import ConsultaCard from './ConsultaCard';
+import ActionsBar from './ActionsBar';
 
-/* ---- MOCK – consultas futuras ------------------------------------ */
-const consultas = [
-    { id: 'c1', data: '2025-06-12 14:00', especialidade: 'Ginecologia'  , status: 'PENDENTE'  },
-    { id: 'c2', data: '2025-06-18 09:30', especialidade: 'Oftalmologia' , status: 'CONFIRMADA'},
-    { id: 'c3', data: '2025-06-20 11:15', especialidade: 'Clínico Geral', status: 'CANCELADA' },
+const consultas = [ // Dados de exemplo
+    { id: 'c1', data: '2025-12-10T14:30:00', medico: 'Dr. Bruno Lima', ubs: 'UBS Central', status: 'PENDENTE' },
+    { id: 'c2', data: '2025-12-12T09:45:00', medico: 'Dra. Laura Souza', ubs: 'UBS Central', status: 'PENDENTE' },
+    { id: 'c3', data: '2025-11-23T11:00:00', medico: 'Dr. Carlos Moura', ubs: 'UBS Central', status: 'CONFIRMADA' },
+    { id: 'c4', data: '2025-11-04T08:00:00', medico: 'Dra. Paula Costa', ubs: 'UBS Barroca', status: 'CONFIRMADA' },
 ];
-
-/* cor para o badge -------------------------------------------------- */
-const corStatus = s => ({
-    PENDENTE  : '#F57C00',
-    CONFIRMADA: '#2E7D32',
-    CANCELADA : '#D32F2F',
-}[s] ?? '#607D8B');
 
 export default function HomeScreen() {
     const { accessToken } = useAuth();
-    const { sub: cpf = '---', nome = 'Munícipe' } = parseJwt(accessToken);
+    const { nome = 'Munícipe' } = parseJwt(accessToken);
+    const [selectedConsulta, setSelectedConsulta] = useState(null);
+    const insets = useSafeAreaInsets(); // 2. Obter os valores da área segura
 
-    const hoje = format(new Date(), "EEEE, d 'de' MMMM yyyy", { locale: ptBR });
+    const handleSelectConsulta = (consulta) => {
+        setSelectedConsulta(prev => (prev?.id === consulta.id ? null : consulta));
+    };
 
     return (
-        <View style={styles.container}>
-            <Text h4 style={styles.date}>{hoje}</Text>
-            <Text h3 style={styles.welcome}>Olá, {nome.split(' ')[0]}!</Text>
+        <View style={styles.safeArea}>
+            <StatusBar barStyle="light-content" backgroundColor={styles.safeArea.backgroundColor} />
+            
+            {/* 3. Aplicar a margem superior dinamicamente ao cabeçalho */}
+            <View style={[styles.header, { paddingTop: insets.top || 16 }]}>
+                <Logo width={40} height={40} />
+                <Text style={styles.headerTitle}>Olá, {nome.split(' ')[0]}</Text>
+            </View>
 
-            {/* Próximas consultas ---------------------------------------- */}
-            <Text style={styles.section}>Próximas consultas</Text>
+            <View style={styles.content}>
+                <Text style={styles.sectionTitle}>Consultas</Text>
+                <FlatList
+                    data={consultas}
+                    keyExtractor={item => item.id}
+                    renderItem={({ item }) => (
+                        <ConsultaCard
+                            item={item}
+                            onPress={() => handleSelectConsulta(item)}
+                            isSelected={selectedConsulta?.id === item.id}
+                        />
+                    )}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 150 }}
+                />
+            </View>
 
-            <FlatList
-                data={consultas}
-                keyExtractor={i => i.id}
-                renderItem={({ item }) => (
-                    <Card containerStyle={styles.card}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Icon name="event" size={20} color="#009688" />
-                            <Text style={styles.cardText}>
-                                {format(new Date(item.data), 'dd/MM HH:mm')} – {item.especialidade}
-                            </Text>
-                            <Badge
-                                value={item.status}
-                                badgeStyle={{ backgroundColor: corStatus(item.status) }}
-                                textStyle={{ fontSize: 11 }}
-                            />
-                        </View>
-                    </Card>
-                )}
-            />
+            {selectedConsulta && <ActionsBar />}
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1, padding: 16, backgroundColor: '#FAFAFA' },
-    date     : { color: '#555', marginBottom: 4 },
-    welcome  : { marginBottom: 16, color: '#009688' },
-    section  : { fontWeight: '700', marginBottom: 8, color: '#424242' },
-    card     : { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12 },
-    cardText : { flex: 1, marginLeft: 8, fontSize: 15 },
-});
