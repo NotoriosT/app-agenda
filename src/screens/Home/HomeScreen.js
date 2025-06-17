@@ -3,16 +3,14 @@
 import React, { useState } from 'react';
 import { View, FlatList, StatusBar } from 'react-native';
 import { Text } from 'react-native-elements';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; // 1. Importar o hook
-
-import { useAuth } from '../../contexts/AuthContext';
-import parseJwt from '../../utils/parseJwt';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/AuthContext';  // <— importamos o municipe daqui
 import Logo from '../../components/Logo';
 import styles from './styles';
 import ConsultaCard from './ConsultaCard';
 import ActionsBar from './ActionsBar';
 
-const consultas = [ // Dados de exemplo
+const consultas = [
     { id: 'c1', data: '2025-12-10T14:30:00', medico: 'Dr. Bruno Lima', ubs: 'UBS Central', status: 'PENDENTE' },
     { id: 'c2', data: '2025-12-12T09:45:00', medico: 'Dra. Laura Souza', ubs: 'UBS Central', status: 'PENDENTE' },
     { id: 'c3', data: '2025-11-23T11:00:00', medico: 'Dr. Carlos Moura', ubs: 'UBS Central', status: 'CONFIRMADA' },
@@ -20,23 +18,26 @@ const consultas = [ // Dados de exemplo
 ];
 
 export default function HomeScreen() {
-    const { accessToken } = useAuth();
-    const { nome = 'Munícipe' } = parseJwt(accessToken);
+    const { municipe } = useAuth();            // pegamos o munícipe do contexto
+    const nome = municipe?.nome?.split(' ')[0] // pega o primeiro nome, ou undefined
+        ?? 'Munícipe';               // fallback
     const [selectedConsulta, setSelectedConsulta] = useState(null);
-    const insets = useSafeAreaInsets(); // 2. Obter os valores da área segura
+    const insets = useSafeAreaInsets();
 
-    const handleSelectConsulta = (consulta) => {
+    const handleSelectConsulta = consulta => {
         setSelectedConsulta(prev => (prev?.id === consulta.id ? null : consulta));
     };
 
     return (
         <View style={styles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor={styles.safeArea.backgroundColor} />
-            
-            {/* 3. Aplicar a margem superior dinamicamente ao cabeçalho */}
+            <StatusBar
+                barStyle="light-content"
+                backgroundColor={styles.safeArea.backgroundColor}
+            />
+
             <View style={[styles.header, { paddingTop: insets.top || 16 }]}>
                 <Logo width={40} height={40} />
-                <Text style={styles.headerTitle}>Olá, {nome.split(' ')[0]}</Text>
+                <Text style={styles.headerTitle}>Olá, {nome}</Text>
             </View>
 
             <View style={styles.content}>

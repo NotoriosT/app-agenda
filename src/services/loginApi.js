@@ -44,8 +44,14 @@ export async function setPassword(senha) {
     await api.post('/auth/set-password', { senha });
 }
 
-/** (Opcional) renova access-token. */
+/** Renova access-token. */
 export async function refreshToken(refreshToken) {
     const { data } = await api.post('/auth/refresh', { refreshToken });
     return data;      // { accessToken }
+}
+
+/** Busca os dados do munícipe logado (com base no token JWT). */
+export async function getMe() {
+    const { data } = await api.get('/auth/me');
+    return data;      // Municipe completo
 }
