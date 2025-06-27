@@ -1,53 +1,26 @@
 // src/screens/Home/HomeScreen.js
 
 import React, { useState } from 'react';
-import { View, FlatList, StatusBar } from 'react-native';
-import { Text } from 'react-native-elements';
+import { View, FlatList, StatusBar, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../../contexts/AuthContext'; // <— importamos o municipe daqui
+// O useFocusEffect não é mais necessário aqui
+import { useAuth } from '../../contexts/AuthContext';
 import Logo from '../../components/Logo';
 import styles from './styles';
 import ConsultaCard from './ConsultaCard';
 import ActionsBar from './ActionsBar';
-
-const consultas = [
-    {
-        id: 'c1',
-        data: '2025-12-10T14:30:00',
-        medico: 'Dr. Bruno Lima',
-        ubs: 'UBS Central',
-        status: 'PENDENTE',
-    },
-    {
-        id: 'c2',
-        data: '2025-12-12T09:45:00',
-        medico: 'Dra. Laura Souza',
-        ubs: 'UBS Central',
-        status: 'PENDENTE',
-    },
-    {
-        id: 'c3',
-        data: '2025-11-23T11:00:00',
-        medico: 'Dr. Carlos Moura',
-        ubs: 'UBS Central',
-        status: 'CONFIRMADA',
-    },
-    {
-        id: 'c4',
-        data: '2025-11-04T08:00:00',
-        medico: 'Dra. Paula Costa',
-        ubs: 'UBS Barroca',
-        status: 'CONFIRMADA',
-    },
-];
+// A importação direta do mock também não é mais necessária
 
 export default function HomeScreen() {
-    const { municipe } = useAuth(); // pegamos o munícipe do contexto
-    const nome =
-        municipe?.nome?.split(' ')[0] ?? // pega o primeiro nome, ou undefined
-        'Munícipe'; // fallback
+    // 1. Obtenha a lista de 'consultas' diretamente do contexto
+    const { municipe, consultas } = useAuth();
+    const nome = municipe?.nome?.split(' ')[0] || 'Munícipe';
+
+    // 2. O estado local 'listaConsultas' foi removido.
     const [selectedConsulta, setSelectedConsulta] = useState(null);
     const insets = useSafeAreaInsets();
+
+    // 3. O useFocusEffect foi completamente removido. O contexto já cuida da atualização.
 
     const handleSelectConsulta = (consulta) => {
         setSelectedConsulta((prev) =>
@@ -58,7 +31,7 @@ export default function HomeScreen() {
     return (
         <View style={styles.safeArea}>
             <StatusBar
-                barStyle="dark-content" // Alterado aqui
+                barStyle="dark-content"
                 backgroundColor={styles.safeArea.backgroundColor}
             />
 
@@ -68,8 +41,9 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.content}>
-                <Text style={styles.sectionTitle}>Consultas</Text>
+                <Text style={styles.sectionTitle}>Minhas Consultas</Text>
                 <FlatList
+                    // 4. A FlatList consome os dados diretamente das 'consultas' do contexto.
                     data={consultas}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
@@ -81,6 +55,17 @@ export default function HomeScreen() {
                     )}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 150 }}
+                    ListEmptyComponent={
+                        <Text
+                            style={{
+                                textAlign: 'center',
+                                marginTop: 20,
+                                color: styles.sectionTitle.color,
+                            }}
+                        >
+                            Nenhuma consulta agendada.
+                        </Text>
+                    }
                 />
             </View>
 

@@ -78,7 +78,8 @@ export default StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    ubsName: {
+    upsName: {
+        // Renomeie aqui
         ...typography.body2,
         color: colors.textSecondary,
         marginLeft: 4,

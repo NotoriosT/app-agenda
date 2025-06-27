@@ -1,39 +1,65 @@
+// src/components/UpsDestinoPicker.js
+
 import React from 'react';
 import RNPickerSelect from 'react-native-picker-select';
 import { View, StyleSheet } from 'react-native';
 
 export default function UpsDestinoPicker({
-                                             value, onChange,
-                                             items = [],               // [{ id, name }]
-                                             enabled = false,
-                                             placeholder = { label: '-- escolha UPS destino --', value: null, color: '#9A9A9A' },
-                                             primary = '#4fa7d8',
-                                             border  = '#D1D1D6',
-                                         }) {
+    value,
+    onChange,
+    items = [],
+    enabled = false,
+    placeholder = {
+        label: '-- escolha UPS destino --',
+        value: null,
+        color: '#9A9A9A',
+    },
+    primary = '#4fa7d8',
+    border = '#D1D1D6',
+}) {
     return (
-        <View style={[
-            styles.container,
-            { borderColor: value ? primary : border, opacity: enabled ? 1 : 0.4 },
-        ]}>
+        <View
+            style={[
+                styles.container,
+                {
+                    borderColor: value ? primary : border,
+                    opacity: enabled ? 1 : 0.4,
+                },
+            ]}
+        >
             <RNPickerSelect
                 value={value}
                 onValueChange={onChange}
-                items={items.map(({ id, name }) => ({ label: name, value: id }))}
+                // --- CORREÇÃO AQUI ---
+                // Adicionamos a propriedade "key" a cada item
+                items={items.map((item) => ({
+                    label: item.nome,
+                    value: item.id,
+                    key: item.id,
+                }))}
+                // ---------------------
                 disabled={!enabled}
                 placeholder={placeholder}
                 useNativeAndroidPickerStyle={false}
                 Icon={null}
                 style={{
-                    inputIOS:     { color: '#333', fontSize: 16, paddingVertical: 0 },
-                    inputAndroid: { color: '#333', fontSize: 16, paddingVertical: 0 },
-                    placeholder:  { color: '#9A9A9A' },
-                    touchableWrapper: styles.touchable,
+                    inputIOS: {
+                        color: '#333',
+                        fontSize: 16,
+                        paddingVertical: 0,
+                    },
+                    inputAndroid: {
+                        color: '#333',
+                        fontSize: 16,
+                        paddingVertical: 0,
+                    },
+                    placeholder: { color: '#9A9A9A' },
                 }}
+                touchableWrapperProps={{ style: styles.touchable }}
             />
         </View>
     );
 }
-
 const styles = StyleSheet.create({
     container: {
         height: 48,
