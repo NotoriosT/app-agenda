@@ -3,13 +3,13 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const api = axios.create({
-    baseURL: 'http://192.168.1.109:8080',
+    baseURL: 'http://192.168.1.147:8080',
     timeout: 5000,
 });
 
 /* ——— Request ——————————————————————————————— */
-api.interceptors.request.use(async cfg => {
-    const token = await AsyncStorage.getItem('@accessToken');   // <- mesmo key do AuthContext!
+api.interceptors.request.use(async (cfg) => {
+    const token = await AsyncStorage.getItem('@accessToken'); // <- mesmo key do AuthContext!
     if (token) cfg.headers.Authorization = `Bearer ${token}`;
 
     /* DEBUG ↓↓↓ */
@@ -24,16 +24,21 @@ api.interceptors.request.use(async cfg => {
 
 /* ——— Response / Error ———————————————————— */
 api.interceptors.response.use(
-    res => {
-        console.log(`[HTTP] ⇐ ${res.status} ${res.config.url}`, '\ndata:', res.data);
+    (res) => {
+        console.log(
+            `[HTTP] ⇐ ${res.status} ${res.config.url}`,
+            '\ndata:',
+            res.data
+        );
         return res;
     },
-    err => {
+    (err) => {
         const { response: r } = err || {};
         if (r) {
             console.log(
                 `[HTTP] ⇐ ${r.status} ${r.config?.url}`,
-                '\nerror:', r.data
+                '\nerror:',
+                r.data
             );
             if (r.status === 401) {
                 // refresh / logout aqui (se quiser)

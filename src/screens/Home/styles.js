@@ -7,7 +7,7 @@ import { typography } from '../../theme/typography';
 export default StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryLight, // Alterado para a cor de fundo clara
     },
     // Cabeçalho
     header: {
@@ -15,11 +15,11 @@ export default StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 16,
-        backgroundColor: colors.primary,
+        backgroundColor: colors.secondaryLight, // Alterado para a cor de fundo clara
     },
     headerTitle: {
         ...typography.h2,
-        color: colors.white,
+        color: colors.text, // Alterado para a cor de texto escura
         marginLeft: 12,
     },
     // Conteúdo principal

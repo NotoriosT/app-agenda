@@ -1,3 +1,5 @@
+// src/contexts/AuthContext.js
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as authApi from '../services/loginApi';
 import api from '../services/api';
@@ -14,17 +16,31 @@ export function AuthProvider({ children }) {
     /* Auto-login: carrega tokens e usuário salvos */
     useEffect(() => {
         (async () => {
-            const [[, at], [, rt], [, userJson]] = await AsyncStorage.multiGet([
-                '@accessToken',
-                '@refreshToken',
-                '@municipe'
-            ]);
-            if (at) {
-                setAccessToken(at);
-                api.defaults.headers.common.Authorization = `Bearer ${at}`;
-            }
-            if (rt) setRefresh(rt);
-            if (userJson) setMunicipe(JSON.parse(userJson));
+            // Inicia as operações de carregamento
+            const loadAppData = async () => {
+                const [[, at], [, rt], [, userJson]] =
+                    await AsyncStorage.multiGet([
+                        '@accessToken',
+                        '@refreshToken',
+                        '@municipe',
+                    ]);
+                if (at) {
+                    setAccessToken(at);
+                    api.defaults.headers.common.Authorization = `Bearer ${at}`;
+                }
+                if (rt) setRefresh(rt);
+                if (userJson) setMunicipe(JSON.parse(userJson));
+            };
+
+            // Garante que a tela de splash seja exibida por no mínimo 2 segundos
+            const minimumTime = new Promise((resolve) =>
+                setTimeout(resolve, 2000)
+            );
+
+            // Espera tanto o carregamento dos dados quanto o tempo mínimo
+            await Promise.all([loadAppData(), minimumTime]);
+
+            // Só então finaliza o carregamento
             setLoading(false);
         })();
     }, []);
@@ -33,7 +49,7 @@ export function AuthProvider({ children }) {
     const persistTokens = async ({ accessToken: at, refreshToken: rt }) => {
         await AsyncStorage.multiSet([
             ['@accessToken', at],
-            ['@refreshToken', rt]
+            ['@refreshToken', rt],
         ]);
         setAccessToken(at);
         setRefresh(rt);
@@ -61,7 +77,7 @@ export function AuthProvider({ children }) {
         await AsyncStorage.multiRemove([
             '@accessToken',
             '@refreshToken',
-            '@municipe'
+            '@municipe',
         ]);
         delete api.defaults.headers.common.Authorization;
         setAccessToken(null);
@@ -71,7 +87,7 @@ export function AuthProvider({ children }) {
 
     /* OTP flow --------------------------------------------------------------- */
     const sendOtp = authApi.sendOtp;
-    const verifyOtp = authApi.verifyOtp;  // devolve { resetToken }
+    const verifyOtp = authApi.verifyOtp; // devolve { resetToken }
     const setPasswd = authApi.setPassword; // precisa header Bearer resetToken
 
     return (
@@ -86,7 +102,7 @@ export function AuthProvider({ children }) {
                 logout,
                 sendOtp,
                 verifyOtp,
-                setPasswd
+                setPasswd,
             }}
         >
             {children}
