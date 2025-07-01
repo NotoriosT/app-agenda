@@ -4,7 +4,6 @@ import {
     todasUPS,
     upsEspecialidades,
 } from '../mock/dadosAgendamentoMock';
-import api from "./api";
 
 /**
  * Simula a busca de todas as especialidades disponíveis.
@@ -102,8 +101,6 @@ export const bookAppointment = async (appointmentDetails) => {
         status: 'PENDENTE',
     };
 
-
-
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Retorna o objeto da consulta criada e a mensagem de sucesso
@@ -113,8 +110,3 @@ export const bookAppointment = async (appointmentDetails) => {
         data: novaConsulta,
     };
 };
-
-export async function getPerguntasPreConsulta() {
-    const { data } = await api.get('/perguntas/pre-consulta')
-    return data
-}
