@@ -51,7 +51,50 @@ export default function LoginScreen() {
         actions: [{ id: 'close', label: 'Fechar', type: 'outline' }],
     });
     
-    const handleContinueCpf = async () => { try { const { exists, passwordSet } = await authApi.checkCpf(cpf); if (!exists) { return openMsg({ title: 'CPF não encontrado', body: 'Este CPF não está cadastrado.', type: 'error', actions: [{ id: 'close', label: 'Ok', type: 'outline' }] }); } if (passwordSet) { setStep('password'); } else { await handleSendOtp(true); setStep('sms'); } } catch (err) { openMsg(errMsg(err, 'Falha na verificação do CPF')); } };
+
+const handleContinueCpf = async () => {
+    try {
+        const { exists, passwordSet, cause } = await authApi.checkCpf(cpf);
+
+        if (!exists || cause === 'NOT_FOUND') {
+            return openMsg({
+                title: 'CPF não encontrado',
+                body: `Favor dirigir-se à Secretaria de Saúde, com os seguintes documentos:\n
+• Documento de identificação com CPF
+• Comprovante de água ou luz
+• IPTU\n
+Caso não possua os comprovantes em seu nome, apresente uma declaração de residência assinada pelo proprietário no modelo disponibilizado pela SMS (clique aqui), junto com conta de água/luz e IPTU do proprietário.`,
+                type: 'error',
+                actions: [{ id: 'close', label: 'Fechar', type: 'outline' }]
+            });
+        }
+
+        if (cause === 'LOGIN_BLOCKED' || cause === 'INACTIVE_TOO_LONG') {
+            return openMsg({
+                title: 'Cadastro inativo ou desatualizado',
+                body: `Favor dirigir-se ao seu Posto de Saúde ou à Secretaria de Saúde, com os seguintes documentos:\n
+• Documento de identificação com CPF
+• Comprovante de água ou luz
+• IPTU\n
+Caso não possua os comprovantes em seu nome, apresente uma declaração de residência assinada pelo proprietário no modelo disponibilizado pela SMS (clique aqui), junto com conta de água/luz e IPTU do proprietário.`,
+                type: 'error',
+                actions: [{ id: 'close', label: 'Fechar', type: 'outline' }]
+            });
+        }
+
+        // Caso OK:
+        if (passwordSet) {
+            setStep('password');
+        } else {
+            await handleSendOtp(true);
+            setStep('sms');
+        }
+
+    } catch (err) {
+        openMsg(errMsg(err, 'Falha na verificação do CPF'));
+    }
+};
+
     const handleSendOtp = async (isInitialFlow = false) => { try { await sendOtp(cpf); if (!isInitialFlow) { openMsg({ title: 'Código enviado', body: 'Verifique seu WhatsApp.', type: 'success', actions: [{ id: 'close', label: 'Ok', type: 'outline' }] }); } } catch (err) { openMsg(errMsg(err, 'Erro ao enviar código')); } };
     const handleLogin = async () => { try { await login(cpf, senha); } catch (err) { openMsg(errMsg(err, 'CPF ou senha inválidos')); } };
     const handleVerifySms = async () => { try { const { resetToken } = await verifyOtp(cpf, codigo); setResetToken(resetToken); setStep('newPass'); } catch (err) { openMsg(errMsg(err, 'Código inválido, tente novamente')); } };
