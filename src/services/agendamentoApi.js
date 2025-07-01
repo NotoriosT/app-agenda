@@ -102,8 +102,6 @@ export const bookAppointment = async (appointmentDetails) => {
         status: 'PENDENTE',
     };
 
-
-
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Retorna o objeto da consulta criada e a mensagem de sucesso
