@@ -1,336 +1,339 @@
 // src/screens/Consultas/ConsultasScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-    ScrollView,
     View,
-    Modal,
     ActivityIndicator,
+    StyleSheet,
+    ScrollView,
+    Modal,
     TouchableOpacity,
+    Linking,
 } from 'react-native';
-import { Text, Button } from 'react-native-elements';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Calendar, LocaleConfig } from 'react-native-calendars';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Text, Button, ListItem, Icon } from 'react-native-elements';
+import { useFocusEffect } from '@react-navigation/native';
 
+import { getPerguntasPreConsulta } from '../../services/agendamentoApi';
 import { colors } from '../../theme/colors';
-import AppMessage from '../../components/AppMessage';
-import EspecialidadePicker from '../../components/EspecialidadePicker';
-import UpsDestinoPicker from '../../components/UpsDestinoPicker';
-import {
-    getEspecialidades,
-    getUpsPorEspecialidade,
-    getAvailableSlots,
-    bookAppointment,
-} from '../../services/agendamentoApi';
-import { useAuth } from '../../contexts/AuthContext'; // 1. Importar o useAuth
-import styles from './styles';
-
-// Configuração do calendário para português
-LocaleConfig.locales['pt-br'] = {
-    monthNames: [
-        'Janeiro',
-        'Fevereiro',
-        'Março',
-        'Abril',
-        'Maio',
-        'Junho',
-        'Julho',
-        'Agosto',
-        'Setembro',
-        'Outubro',
-        'Novembro',
-        'Dezembro',
-    ],
-    dayNames: [
-        'Domingo',
-        'Segunda',
-        'Terça',
-        'Quarta',
-        'Quinta',
-        'Sexta',
-        'Sábado',
-    ],
-    dayNamesShort: ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'],
-    today: 'Hoje',
-};
-LocaleConfig.defaultLocale = 'pt-br';
 
 export default function ConsultasScreen() {
-    const { adicionarConsulta } = useAuth(); // 2. Obter a função do contexto
-    const insets = useSafeAreaInsets();
+    const [loading, setLoading] = useState(false);
+    const [perguntas, setPerguntas] = useState([]);
+    const [index, setIndex] = useState(0);
+    const [step, setStep] = useState('QUESTION');       // 'QUESTION' | 'INSTRUCT' | 'SCHEDULE'
+    const [error, setError] = useState('');
+    const [instruction, setInstruction] = useState(null);
 
-    // Estados de dados
-    const [especialidades, setEspecialidades] = useState([]);
-    const [destinoItems, setDestinoItems] = useState([]);
-    const [slots, setSlots] = useState({ loading: false, items: [] });
+    useFocusEffect(
+        useCallback(() => {
+            let active = true;
+            const fetchAll = async () => {
+                setLoading(true);
+                setError('');
+                setInstruction(null);
+                setStep('QUESTION');
+                setPerguntas([]);
+                setIndex(0);
+                try {
+                    const data = await getPerguntasPreConsulta();
+                    if (!active) return;
+                    if (data?.length) setPerguntas(data);
+                    else setStep('SCHEDULE');
+                } catch {
+                    if (!active) return;
+                    setError('Não foi possível carregar as perguntas. Tente novamente.');
+                } finally {
+                    if (active) setLoading(false);
+                }
+            };
+            fetchAll();
+            return () => { active = false; };
+        }, [])
+    );
 
-    // Estados do formulário
-    const [selectedEspId, setSelectedEspId] = useState('');
-    const [selectedUpsId, setSelectedUpsId] = useState('');
-    const [selectedDate, setSelectedDate] = useState('');
-    const [selectedSlot, setSelectedSlot] = useState('');
+    if (loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
+    if (error) {
+        return (
+            <View style={styles.center}>
+                <Text style={styles.errorText}>{error}</Text>
+                <Button
+                    title="Tentar Novamente"
+                    onPress={() => setStep('QUESTION')}
+                    buttonStyle={styles.retryButton}
+                    titleStyle={styles.retryTitle}
+                />
+            </View>
+        );
+    }
 
-    // Estados de controle da UI
-    const [isLoading, setIsLoading] = useState({
-        especialidades: false,
-        ups: false,
-    });
-    const [isCalendarVisible, setCalendarVisible] = useState(false);
-    const [isBooking, setIsBooking] = useState(false);
-    const [message, setMessage] = useState(null);
-
-    // Carrega as especialidades na primeira vez que a tela é aberta
-    useEffect(() => {
-        const fetchEspecialidades = async () => {
-            setIsLoading((prev) => ({ ...prev, especialidades: true }));
-            const data = await getEspecialidades();
-            setEspecialidades(data);
-            setIsLoading((prev) => ({ ...prev, especialidades: false }));
-        };
-        fetchEspecialidades();
-    }, []);
-
-    // Busca as UPS de destino sempre que uma especialidade é selecionada
-    useEffect(() => {
-        const fetchUps = async () => {
-            if (!selectedEspId) return;
-            setIsLoading((prev) => ({ ...prev, ups: true }));
-            setDestinoItems([]);
-            const data = await getUpsPorEspecialidade(selectedEspId);
-            setDestinoItems(data);
-            setIsLoading((prev) => ({ ...prev, ups: false }));
-        };
-        fetchUps();
-    }, [selectedEspId]);
-
-    const handleSelectEsp = (espId) => {
-        setSelectedEspId(espId);
-        setSelectedUpsId('');
-        setSelectedDate('');
-        setSelectedSlot('');
-        setSlots({ loading: false, items: [] });
-    };
-
-    // Busca os horários sempre que a data ou UPS mudam
-    useEffect(() => {
-        const fetchSlots = async () => {
-            if (!selectedUpsId || !selectedDate) return;
-            setSlots({ loading: true, items: [] });
-            setSelectedSlot('');
-            try {
-                const availableSlots = await getAvailableSlots(
-                    selectedUpsId,
-                    selectedDate
-                );
-                setSlots({ loading: false, items: availableSlots });
-            } catch (error) {
-                console.error('Erro ao buscar horários:', error);
-                setSlots({ loading: false, items: [] });
-            }
-        };
-        fetchSlots();
-    }, [selectedDate, selectedUpsId]);
-
-    const handleAgendar = async () => {
-        setIsBooking(true);
-        try {
-            // 3. A API agora retorna o objeto da consulta
-            const response = await bookAppointment({
-                upsId: selectedUpsId,
-                especialidadeId: selectedEspId,
-                data: selectedDate,
-                horario: selectedSlot,
-            });
-
-            if (response.success && response.data) {
-                // 4. CHAMA A FUNÇÃO DO CONTEXTO para atualizar o estado global
-                adicionarConsulta(response.data);
-
-                setMessage({
-                    title: 'Sucesso!',
-                    body: `Sua consulta foi agendada para ${format(
-                        new Date(selectedDate),
-                        'dd/MM/yyyy'
-                    )} às ${selectedSlot}.`,
-                    type: 'success',
-                });
-                // Limpa o formulário após o sucesso
-                setSelectedEspId('');
-                setSelectedUpsId('');
-                setSelectedDate('');
-                setSelectedSlot('');
-                setDestinoItems([]);
-                setSlots({ loading: false, items: [] });
-            } else {
-                throw new Error(
-                    response.message || 'Ocorreu um erro desconhecido.'
-                );
-            }
-        } catch (error) {
-            setMessage({
-                title: 'Erro',
-                body: 'Não foi possível agendar a consulta. Tente novamente.',
-                type: 'error',
-            });
-        } finally {
-            setIsBooking(false);
-        }
-    };
-
-    const isFormReady =
-        selectedEspId && selectedUpsId && selectedDate && selectedSlot;
+    // placeholder do agendamento em background
+    const schedulingUI = (
+        <View style={styles.center}>
+            <Text style={styles.header}>Agendar Consulta</Text>
+            <Text style={styles.infoText}>
+                Aqui você verá o formulário de agendamento.
+            </Text>
+        </View>
+    );
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <ScrollView
-                contentContainerStyle={[
-                    styles.container,
-                    {
-                        paddingTop: insets.top + 16,
-                        paddingBottom: insets.bottom + 16,
-                    },
-                ]}
-                keyboardShouldPersistTaps="handled"
-            >
-                <Text style={styles.header}>Agendar Consulta</Text>
+        <View style={styles.flex}>
+            {schedulingUI}
 
-                <Text style={styles.label}>1. Selecione a especialidade</Text>
-                <EspecialidadePicker
-                    value={selectedEspId}
-                    onChange={handleSelectEsp}
-                    items={especialidades}
-                    loading={isLoading.especialidades}
-                />
-
-                <Text style={styles.label}>2. Selecione a UPS de destino</Text>
-                <UpsDestinoPicker
-                    value={selectedUpsId}
-                    onChange={setSelectedUpsId}
-                    items={destinoItems}
-                    enabled={!!selectedEspId && !isLoading.ups}
-                    placeholder={
-                        isLoading.ups
-                            ? { label: 'Carregando...', value: null }
-                            : {
-                                  label: '-- escolha UPS destino --',
-                                  value: null,
-                              }
-                    }
-                />
-
-                {selectedUpsId && (
-                    <>
-                        <Text style={styles.label}>3. Escolha a data</Text>
+            {/* Pergunta Modal */}
+            <Modal visible={step === 'QUESTION'} transparent animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        {/* close button */}
                         <TouchableOpacity
-                            style={styles.datePickerButton}
-                            onPress={() => setCalendarVisible(true)}
+                            style={styles.closeButton}
+                            onPress={() => setStep('SCHEDULE')}
                         >
-                            <Text style={styles.datePickerText}>
-                                {selectedDate
-                                    ? format(
-                                          new Date(selectedDate),
-                                          "EEEE, dd 'de' MMMM 'de' yyyy",
-                                          { locale: ptBR }
-                                      )
-                                    : 'Clique para selecionar uma data'}
-                            </Text>
+                            <Icon name="close" size={24} />
                         </TouchableOpacity>
-                    </>
-                )}
 
-                {slots.loading && (
-                    <ActivityIndicator
-                        style={{ marginVertical: 20 }}
-                        size="large"
-                        color={colors.primary}
-                    />
-                )}
-
-                {!slots.loading && selectedDate && slots.items.length === 0 && (
-                    <Text
-                        style={{
-                            textAlign: 'center',
-                            marginTop: 20,
-                            color: colors.textSecondary,
-                        }}
-                    >
-                        Nenhum horário disponível para esta data.
-                    </Text>
-                )}
-
-                {slots.items.length > 0 && (
-                    <>
-                        <Text style={styles.label}>4. Escolha o horário</Text>
-                        <View style={styles.slotContainer}>
-                            {slots.items.map((slot) => (
-                                <TouchableOpacity
-                                    key={slot}
-                                    style={[
-                                        styles.slotButton,
-                                        selectedSlot === slot &&
-                                            styles.slotButtonSelected,
-                                    ]}
-                                    onPress={() => setSelectedSlot(slot)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.slotText,
-                                            selectedSlot === slot &&
-                                                styles.slotTextSelected,
-                                        ]}
-                                    >
-                                        {slot}
+                        {perguntas.length > 0 && (
+                            <>
+                                <Text style={styles.header}>
+                                    {perguntas[index].tipoConsulta === 'PRE_CONSULTA'
+                                        ? 'Pré-Consulta'
+                                        : 'Pós-Consulta'}
+                                </Text>
+                                <ScrollView contentContainerStyle={styles.questionScroll}>
+                                    <Text style={styles.question}>
+                                        {perguntas[index].texto}
                                     </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </>
-                )}
-
-                <Button
-                    title="Confirmar Agendamento"
-                    onPress={handleAgendar}
-                    disabled={!isFormReady || isBooking}
-                    loading={isBooking}
-                    containerStyle={{ marginTop: 40 }}
-                />
-            </ScrollView>
-
-            <Modal
-                visible={isCalendarVisible}
-                transparent={true}
-                animationType="fade"
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.calendarWrapper}>
-                        <Calendar
-                            onDayPress={(day) => {
-                                setSelectedDate(day.dateString);
-                                setCalendarVisible(false);
-                            }}
-                            minDate={new Date().toISOString().split('T')[0]}
-                            markedDates={{
-                                [selectedDate]: {
-                                    selected: true,
-                                    selectedColor: colors.primary,
-                                },
-                            }}
-                        />
-                        <Button
-                            title="Fechar"
-                            type="clear"
-                            onPress={() => setCalendarVisible(false)}
-                        />
+                                    <Text style={styles.instruction}>Selecione uma opção:</Text>
+                                    {perguntas[index].respostas.map((r, i) => (
+                                        <Button
+                                            key={`resp-${index}-${i}`}
+                                            title={r.titulo}
+                                            onPress={() => {
+                                                setInstruction(r);
+                                                setStep('INSTRUCT');
+                                            }}
+                                            buttonStyle={styles.responseButton}
+                                            titleStyle={styles.responseTitle}
+                                            containerStyle={styles.responseContainer}
+                                        />
+                                    ))}
+                                </ScrollView>
+                            </>
+                        )}
                     </View>
                 </View>
             </Modal>
 
-            <AppMessage
-                visible={!!message}
-                message={message}
-                onAction={() => setMessage(null)}
-            />
+            {/* Instrução Modal */}
+            <Modal
+                visible={step === 'INSTRUCT' && !!instruction}
+                transparent
+                animationType="fade"
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        {/* close button */}
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setStep('SCHEDULE')}
+                        >
+                            <Icon name="close" size={24} />
+                        </TouchableOpacity>
+
+                        {instruction && (
+                            <ScrollView contentContainerStyle={styles.questionScroll}>
+                                <Text style={styles.header}>Detalhes</Text>
+                                <Text style={styles.subHeader}>
+                                    {instruction.descricao || instruction.link.titulo}
+                                </Text>
+                                {(instruction.passoAPasso || []).map((stepText, i) => (
+                                    <ListItem
+                                        key={`passo-${index}-${i}`}
+                                        bottomDivider
+                                        containerStyle={styles.stepItem}
+                                    >
+                                        <Icon name="chevron-right" />
+                                        <ListItem.Content>
+                                            <ListItem.Title style={styles.stepText}>
+                                                {stepText}
+                                            </ListItem.Title>
+                                        </ListItem.Content>
+                                    </ListItem>
+                                ))}
+                                <Text style={styles.linkValue}>{instruction.link.url}</Text>
+                                <Button
+                                    title="Abrir Link"
+                                    onPress={() => Linking.openURL(instruction.link.url)}
+                                    buttonStyle={styles.linkButton}
+                                    titleStyle={styles.linkTitle}
+                                    containerStyle={styles.responseContainer}
+                                />
+                                {instruction.proximaAcao === 'AGENDAR_CONSULTA' && (
+                                    <Button
+                                        title="Continuar"
+                                        onPress={() => {
+                                            if (index < perguntas.length - 1) {
+                                                setIndex(index + 1);
+                                                setStep('QUESTION');
+                                            } else {
+                                                setStep('SCHEDULE');
+                                            }
+                                        }}
+                                        buttonStyle={styles.continueButton}
+                                        titleStyle={styles.continueTitle}
+                                        containerStyle={styles.responseContainer}
+                                    />
+                                )}
+                                <Button
+                                    title="Voltar às Perguntas"
+                                    type="outline"
+                                    onPress={() => {
+                                        setInstruction(null);
+                                        setStep('QUESTION');
+                                    }}
+                                    containerStyle={styles.responseContainer}
+                                />
+                            </ScrollView>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    flex: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: colors.primary,
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    subHeader: {
+        fontSize: 18,
+        color: colors.textPrimary,
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        zIndex: 10,
+    },
+    linkValue: {
+        fontSize: 14,
+        color: colors.primary,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    questionScroll: {
+        alignItems: 'stretch',
+    },
+    question: {
+        fontSize: 20,
+        color: colors.textPrimary,
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    instruction: {
+        fontSize: 16,
+        color: colors.textSecondary,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    responseContainer: {
+        marginBottom: 12,
+    },
+    responseButton: {
+        backgroundColor: colors.primary,
+        paddingVertical: 14,
+        borderRadius: 6,
+    },
+    responseTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    linkButton: {
+        backgroundColor: colors.secondary,
+        paddingVertical: 14,
+        borderRadius: 6,
+    },
+    linkTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    continueButton: {
+        backgroundColor: colors.primary,
+        paddingVertical: 14,
+        borderRadius: 6,
+    },
+    continueTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    retryButton: {
+        backgroundColor: colors.error,
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        borderRadius: 6,
+        marginTop: 16,
+    },
+    retryTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    errorText: {
+        color: colors.error,
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    infoText: {
+        fontSize: 18,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        marginTop: 8,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
+    },
+    modalContainer: {
+        width: '100%',
+        maxWidth: 400,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 16,
+    },
+    stepItem: {
+        backgroundColor: '#fafafa',
+        borderRadius: 4,
+        marginVertical: 4,
+    },
+    stepText: {
+        fontSize: 14,
+        color: colors.textPrimary,
+    },
+});
