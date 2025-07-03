@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as authApi from '../services/loginApi';
 import api from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { consultas as consultasIniciais } from '../mock/consultasMock'; // 1. Importa os dados iniciais do mock
 
 const AuthContext = createContext();
 
@@ -10,6 +11,8 @@ export function AuthProvider({ children }) {
     const [accessToken, setAccessToken] = useState(null);
     const [refreshToken, setRefresh] = useState(null);
     const [municipe, setMunicipe] = useState(null);
+    // 2. ADICIONA O ESTADO DAS CONSULTAS AQUI
+    const [consultas, setConsultas] = useState(consultasIniciais);
 
     /* Auto-login: carrega tokens e usuário salvos */
     useEffect(() => {
@@ -68,6 +71,11 @@ export function AuthProvider({ children }) {
         setRefresh(null);
         setMunicipe(null);
     };
+    // 3. CRIA A FUNÇÃO PARA ADICIONAR UMA NOVA CONSULTA
+    const adicionarConsulta = (novaConsulta) => {
+        // Adiciona a nova consulta no topo da lista
+        setConsultas((listaAtual) => [novaConsulta, ...listaAtual]);
+    };
 
     /* OTP flow --------------------------------------------------------------- */
     const sendOtp = authApi.sendOtp;
@@ -83,6 +91,8 @@ export function AuthProvider({ children }) {
                 refreshToken,
                 municipe,
                 login,
+                consultas, // 4. EXPORTA A LISTA DE CONSULTAS
+                adicionarConsulta, // 5. EXPORTA A FUNÇÃO
                 logout,
                 sendOtp,
                 verifyOtp,
