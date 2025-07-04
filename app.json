@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app-agenda",
-    "slug": "app-agenda",
+    "name": "",
+    "slug": "",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,10 +16,8 @@
       "supportsTablet": true
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
+      "icon": "./assets/icon.png", 
+      "backgroundColor": "#ffffff",
       "edgeToEdgeEnabled": true,
       "package": "com.tonon2002.appagenda"
     },

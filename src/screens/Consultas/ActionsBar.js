@@ -1,20 +1,19 @@
-// src/screens/Home/ActionsBar.js
+// Localização: src/screens/Consultas/ActionsBar.js
 
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, Icon } from 'react-native-elements';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; // 1. Importar o hook
-import styles from './styles';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import styles from './styles'; // CORRIGIDO: Importando da mesma pasta
 import { colors } from '../../theme/colors';
 
 const ActionsBar = () => {
-    const insets = useSafeAreaInsets(); // 2. Obter os valores da área segura
+    const insets = useSafeAreaInsets();
 
     const handleCancel = () => console.log("Ação: Cancelar");
     const handleReschedule = () => console.log("Ação: Reagendar");
 
     return (
-        // 3. Aplicar a margem inferior dinamicamente
         <View style={[styles.actionsContainer, { paddingBottom: insets.bottom || 20 }]}>
             <Text style={styles.actionsTitle}>Abrir consulta</Text>
             <View style={styles.actionsButtons}>

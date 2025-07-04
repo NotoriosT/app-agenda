@@ -1,54 +1,57 @@
-// src/navigation/MainTabNavigator.js
-
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Icon } from 'react-native-elements';
+import { Ionicons } from '@expo/vector-icons';
 
+// Telas
 import HomeScreen from '../screens/Home/HomeScreen';
 import ConsultasScreen from '../screens/Consultas/ConsultasScreen';
 import MensagensScreen from '../screens/Mensagens/MensagensScreen';
 import PerfilScreen from '../screens/Perfil/PerfilScreen';
 
+// Tema
 import { colors } from '../theme/colors';
 
 const Tab = createBottomTabNavigator();
 
 export default function MainTabNavigator() {
-    return (
-        <Tab.Navigator
-            screenOptions={({ route }) => ({
-                headerShown: false, // O cabeçalho é gerido por cada ecrã
-                tabBarIcon: ({ focused, color, size }) => {
-                    let iconName;
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false, // Mantém os cabeçalhos personalizados de cada tela
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
 
-                    if (route.name === 'Início') {
-                        iconName = 'home';
-                    } else if (route.name === 'Consultas') {
-                        iconName = 'event-note';
-                    } else if (route.name === 'Mensagens') {
-                        iconName = 'chat-bubble-outline';
-                    } else if (route.name === 'Perfil') {
-                        iconName = 'person-outline';
-                    }
+          if (route.name === 'Início') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Consultas') {
+            iconName = focused ? 'calendar' : 'calendar-outline';
+          } else if (route.name === 'Mensagens') {
+            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          } else if (route.name === 'Perfil') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
 
-                    return <Icon name={iconName} type="material" size={size} color={color} />;
-                },
-                tabBarActiveTintColor: colors.primary,
-                tabBarInactiveTintColor: colors.textSecondary,
-                tabBarStyle: {
-                    backgroundColor: colors.white,
-                    borderTopColor: colors.border,
-                },
-                tabBarLabelStyle: {
-                    fontSize: 12,
-                    paddingBottom: 4,
-                },
-            })}
-        >
-            <Tab.Screen name="Início" component={HomeScreen} />
-            <Tab.Screen name="Consultas" component={ConsultasScreen} />
-            <Tab.Screen name="Mensagens" component={MensagensScreen} />
-            <Tab.Screen name="Perfil" component={PerfilScreen} />
-        </Tab.Navigator>
-    );
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: 'gray',
+        tabBarLabelStyle: {
+          paddingBottom: 5,
+          fontSize: 12,
+        },
+        tabBarStyle: {
+          height: 60,
+          paddingTop: 5,
+        },
+      })}
+    >
+      {/* Atribuindo os componentes corretos para cada aba */}
+      <Tab.Screen name="Início" component={HomeScreen} />
+      <Tab.Screen name="Consultas" component={ConsultasScreen} />
+
+      {/* As outras abas permanecem como estavam */}
+      <Tab.Screen name="Mensagens" component={MensagensScreen} />
+      <Tab.Screen name="Perfil" component={PerfilScreen} />
+    </Tab.Navigator>
+  );
 }

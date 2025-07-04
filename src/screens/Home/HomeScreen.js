@@ -1,75 +1,141 @@
-// src/screens/Home/HomeScreen.js
-
 import React, { useState } from 'react';
-import { View, FlatList, StatusBar, Text } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// O useFocusEffect não é mais necessário aqui
 import { useAuth } from '../../contexts/AuthContext';
-import Logo from '../../components/Logo';
+import Logo from '../../components/Logo'; // 1. Re-importar o Logo
+import PreConsultaModal from './PreConsultaModal';
 import styles from './styles';
-import ConsultaCard from './ConsultaCard';
-import ActionsBar from './ActionsBar';
-// A importação direta do mock também não é mais necessária
+import { Icon } from 'react-native-elements';
+import { colors } from '../../theme/colors';
+
+// O array homeActions permanece o mesmo, sem alterações
+const homeActions = [
+    {
+        key: 'receitaBranca',
+        title: 'Renovação de Receita Branca',
+        icon: 'receipt-long',
+        modal: {
+            title: 'Pré-Consulta',
+            question: 'Deseja renovar receitas contínuas (receitas brancas)?',
+            options: ['Sim', 'Não'],
+            result: {
+                message: 'Será direcionado ao Pronto atendimento virtual de Esteio',
+                linkText: 'Abrir Link',
+                linkUrl: 'https://wa.me/558008889622'
+            }
+        },
+    },
+    {
+        key: 'receitaAzul',
+        title: 'Renovação de Receita Azul/Amarela',
+        icon: 'receipt-long',
+        modal: {
+            title: 'Pré-Consulta',
+            question: 'Renovação de receitas Azul ou amarela?',
+            options: ['Sim', 'Não'],
+            result: {
+                message: 'Deverá se dirigir a uma UBS para agendamento presencial',
+                linkText: 'Abrir Mapa de UBS',
+                linkUrl: 'https://www.google.com/maps/search/?api=1&query=UBS+em+Esteio+RS'
+            }
+        },
+    },
+    {
+        key: 'queixas',
+        title: 'Queixas do Dia (Leve/Moderada)',
+        icon: 'sick',
+        modal: {
+            title: 'Pré-Consulta',
+            question: 'Queixas do dia de gravidade leve e moderada?',
+            options: ['Sim', 'Não'],
+            result: {
+                message: 'Será encaminhado para atendimento do Pronto atendimento virtual de Esteio',
+                linkText: 'Abrir Link',
+                linkUrl: 'https://wa.me/558008889622'
+            }
+        },
+    },
+    {
+        key: 'gravidez',
+        title: 'Suspeita de Gravidez',
+        icon: 'pregnant-woman',
+        modal: {
+            title: 'Pré-Consulta',
+            question: 'Suspeita de Gravidez?',
+            options: ['Sim', 'Não'],
+            result: {
+                message: 'Em caso de suspeita de gravidez, procure a sua UBS de referência para realizar o teste e iniciar o pré-natal.',
+                linkText: 'Encontrar minha UBS',
+                linkUrl: 'https://www.esteio.rs.gov.br/saude'
+            }
+        },
+    },
+    {
+        key: 'agendamento',
+        title: 'Agendamento de Consulta',
+        icon: 'event',
+        modal: {
+            title: 'Pré-Consulta',
+            question: 'Agendamento de consulta médica?',
+            options: ['Sim', 'Não'],
+            result: {
+                message: 'As agendas serão liberadas a partir de 07/08/2025',
+                linkText: 'Abrir Link',
+                linkUrl: 'https://www.esteio.rs.gov.br/saude'
+            }
+        },
+    },
+    {
+        key: 'duvidas',
+        title: 'Demais Queixas e Dúvidas',
+        icon: 'help-outline',
+        modal: {
+            title: 'Pré-Consulta',
+            question: 'Demais queixas e dúvidas?',
+            options: ['Sim', 'Não'],
+            result: {
+                message: 'Para demais queixas e dúvidas, o munícipe deve se dirigir a sua UBS de referência.',
+                linkText: 'Encontrar minha UBS',
+                linkUrl: 'https://www.esteio.rs.gov.br/saude'
+            }
+        },
+    },
+];
 
 export default function HomeScreen() {
-    // 1. Obtenha a lista de 'consultas' diretamente do contexto
-    const { municipe, consultas } = useAuth();
+    const { municipe } = useAuth();
     const nome = municipe?.nome?.split(' ')[0] || 'Munícipe';
-
-    // 2. O estado local 'listaConsultas' foi removido.
-    const [selectedConsulta, setSelectedConsulta] = useState(null);
     const insets = useSafeAreaInsets();
-
-    // 3. O useFocusEffect foi completamente removido. O contexto já cuida da atualização.
-
-    const handleSelectConsulta = (consulta) => {
-        setSelectedConsulta((prev) =>
-            prev?.id === consulta.id ? null : consulta
-        );
-    };
+    const [activeModalData, setActiveModalData] = useState(null);
 
     return (
         <View style={styles.safeArea}>
-            <StatusBar
-                barStyle="dark-content"
-                backgroundColor={styles.safeArea.backgroundColor}
-            />
-
+            {/* 2. Cabeçalho com Logo e Texto */}
             <View style={[styles.header, { paddingTop: insets.top || 16 }]}>
                 <Logo width={55} height={55} />
                 <Text style={styles.headerTitle}>Olá, {nome}</Text>
             </View>
 
             <View style={styles.content}>
-                <Text style={styles.sectionTitle}>Minhas Consultas</Text>
-                <FlatList
-                    // 4. A FlatList consome os dados diretamente das 'consultas' do contexto.
-                    data={consultas}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <ConsultaCard
-                            item={item}
-                            onPress={() => handleSelectConsulta(item)}
-                            isSelected={selectedConsulta?.id === item.id}
-                        />
-                    )}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 150 }}
-                    ListEmptyComponent={
-                        <Text
-                            style={{
-                                textAlign: 'center',
-                                marginTop: 20,
-                                color: styles.sectionTitle.color,
-                            }}
+                <Text style={styles.sectionTitle}>Como podemos te ajudar?</Text>
+                <View style={styles.actionsGrid}>
+                    {homeActions.map((action) => (
+                        <TouchableOpacity
+                            key={action.key}
+                            style={styles.actionCard}
+                            onPress={() => setActiveModalData(action)}
                         >
-                            Nenhuma consulta agendada.
-                        </Text>
-                    }
-                />
+                            <Icon name={action.icon} type="material" size={32} color={colors.primary} />
+                            <Text style={styles.actionCardTitle}>{action.title}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
-
-            {selectedConsulta && <ActionsBar />}
+            
+            <PreConsultaModal
+                modalData={activeModalData}
+                onClose={() => setActiveModalData(null)}
+            />
         </View>
     );
 }
