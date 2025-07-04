@@ -1,14 +1,15 @@
-// Localização: src/screens/Consultas/ConsultaCard.js
+// src/screens/Home/ConsultaCard.js
 
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text, Icon } from 'react-native-elements';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
-import styles from './styles'; // CORRIGIDO: Importando da mesma pasta
+import styles from './styles';
 import { colors } from '../../theme/colors';
 
 const ConsultaCard = ({ item, onPress, isSelected }) => {
+    // Mapeia o status para as cores correspondentes
     const statusInfo = {
         PENDENTE: { bg: colors.warningBackground, text: colors.accentDark },
         CONFIRMADA: {
@@ -25,12 +26,14 @@ const ConsultaCard = ({ item, onPress, isSelected }) => {
             onPress={onPress}
             style={[styles.card, isSelected && styles.cardSelected]}
         >
+            {/* Linha do Status */}
             <View style={[styles.badge, { backgroundColor: statusStyle.bg }]}>
                 <Text style={[styles.badgeText, { color: statusStyle.text }]}>
                     {item.status}
                 </Text>
             </View>
 
+            {/* Corpo do Cartão */}
             <View style={styles.cardBody}>
                 <View style={styles.cardMainInfo}>
                     <Text style={styles.doctorName}>{item.medico}</Text>
