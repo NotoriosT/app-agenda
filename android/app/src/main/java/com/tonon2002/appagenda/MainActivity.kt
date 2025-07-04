@@ -1,4 +1,4 @@
-package com.tonon2002.appagenda
+package com.app
 
 import android.os.Build
 import android.os.Bundle

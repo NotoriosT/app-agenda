@@ -54,6 +54,36 @@ export default function ConsultasScreen() {
         }, [])
     );
 
+    const advanceToNextStep = () => {
+        if (index < perguntas.length - 1) {
+            setIndex(index + 1);
+            setStep('QUESTION');
+        } else {
+            setStep('SCHEDULE');
+        }
+    };
+
+    // ❗ LÓGICA ATUALIZADA AQUI
+    // Esta função agora lida com o clique na resposta de forma mais clara
+    const handleAnswerPress = (answer) => {
+        // Adicionamos logs para depuração. Verifique seu console Metro/Terminal.
+        console.log("--- RESPOSTA SELECIONADA ---");
+        console.log("Título:", answer.titulo);
+        console.log("Valor de 'vazio':", answer.vazio);
+        console.log("Tipo de 'vazio':", typeof answer.vazio);
+
+        // Lógica simplificada e estrita: se 'vazio' for EXATAMENTE true, avança.
+        // Isso garante que apenas o booleano 'true' funcione.
+        if (answer.vazio === true) {
+            console.log("DECISÃO: 'vazio' é true. Pulando para a próxima pergunta.");
+            advanceToNextStep();
+        } else {
+            console.log("DECISÃO: 'vazio' é false ou não definido. Mostrando detalhes.");
+            setInstruction(answer);
+            setStep('INSTRUCT');
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.center}>
@@ -75,7 +105,6 @@ export default function ConsultasScreen() {
         );
     }
 
-    // placeholder do agendamento em background
     const schedulingUI = (
         <View style={styles.center}>
             <Text style={styles.header}>Agendar Consulta</Text>
@@ -97,7 +126,6 @@ export default function ConsultasScreen() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
-                        {/* close button */}
                         <TouchableOpacity
                             style={styles.closeButton}
                             onPress={() => setStep('SCHEDULE')}
@@ -108,16 +136,11 @@ export default function ConsultasScreen() {
                         {perguntas.length > 0 && (
                             <>
                                 <Text style={styles.header}>
-                                    {perguntas[index].tipoConsulta ===
-                                    'PRE_CONSULTA'
+                                    {perguntas[index].tipoConsulta === 'PRE_CONSULTA'
                                         ? 'Pré-Consulta'
                                         : 'Pós-Consulta'}
                                 </Text>
-                                <ScrollView
-                                    contentContainerStyle={
-                                        styles.questionScroll
-                                    }
-                                >
+                                <ScrollView contentContainerStyle={styles.questionScroll}>
                                     <Text style={styles.question}>
                                         {perguntas[index].texto}
                                     </Text>
@@ -128,15 +151,11 @@ export default function ConsultasScreen() {
                                         <Button
                                             key={`resp-${index}-${i}`}
                                             title={r.titulo}
-                                            onPress={() => {
-                                                setInstruction(r);
-                                                setStep('INSTRUCT');
-                                            }}
+                                            // ✅ Chamando a nova função de handler
+                                            onPress={() => handleAnswerPress(r)}
                                             buttonStyle={styles.responseButton}
                                             titleStyle={styles.responseTitle}
-                                            containerStyle={
-                                                styles.responseContainer
-                                            }
+                                            containerStyle={styles.responseContainer}
                                         />
                                     ))}
                                 </ScrollView>
@@ -146,7 +165,7 @@ export default function ConsultasScreen() {
                 </View>
             </Modal>
 
-            {/* Instrução Modal */}
+            {/* Instrução Modal (sem alterações) */}
             <Modal
                 visible={step === 'INSTRUCT' && !!instruction}
                 transparent
@@ -154,7 +173,6 @@ export default function ConsultasScreen() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
-                        {/* close button */}
                         <TouchableOpacity
                             style={styles.closeButton}
                             onPress={() => setStep('SCHEDULE')}
@@ -163,61 +181,48 @@ export default function ConsultasScreen() {
                         </TouchableOpacity>
 
                         {instruction && (
-                            <ScrollView
-                                contentContainerStyle={styles.questionScroll}
-                            >
+                            <ScrollView contentContainerStyle={styles.questionScroll}>
                                 <Text style={styles.header}>Detalhes</Text>
-                                <Text style={styles.subHeader}>
-                                    {instruction.descricao ||
-                                        instruction.link.titulo}
-                                </Text>
-                                {(instruction.passoAPasso || []).map(
-                                    (stepText, i) => (
-                                        <ListItem
-                                            key={`passo-${index}-${i}`}
-                                            bottomDivider
-                                            containerStyle={styles.stepItem}
-                                        >
-                                            <Icon name="chevron-right" />
-                                            <ListItem.Content>
-                                                <ListItem.Title
-                                                    style={styles.stepText}
-                                                >
-                                                    {stepText}
-                                                </ListItem.Title>
-                                            </ListItem.Content>
-                                        </ListItem>
-                                    )
+                                {!!instruction.descricao && (
+                                    <Text style={styles.subHeader}>
+                                        {instruction.descricao}
+                                    </Text>
                                 )}
-                                <Text style={styles.linkValue}>
-                                    {instruction.link.url}
-                                </Text>
-                                <Button
-                                    title="Abrir Link"
-                                    onPress={() =>
-                                        Linking.openURL(instruction.link.url)
-                                    }
-                                    buttonStyle={styles.linkButton}
-                                    titleStyle={styles.linkTitle}
-                                    containerStyle={styles.responseContainer}
-                                />
-                                {instruction.proximaAcao ===
-                                    'AGENDAR_CONSULTA' && (
+                                {(instruction.passoAPasso || []).map((stepText, i) => (
+                                    <ListItem
+                                        key={`passo-${index}-${i}`}
+                                        bottomDivider
+                                        containerStyle={styles.stepItem}
+                                    >
+                                        <Icon name="chevron-right" />
+                                        <ListItem.Content>
+                                            <ListItem.Title style={styles.stepText}>
+                                                {stepText}
+                                            </ListItem.Title>
+                                        </ListItem.Content>
+                                    </ListItem>
+                                ))}
+                                {instruction.link?.url && (
+                                    <>
+                                        <Text style={styles.linkValue}>
+                                            {instruction.link.url}
+                                        </Text>
+                                        <Button
+                                            title="Abrir Link"
+                                            onPress={() => Linking.openURL(instruction.link.url)}
+                                            buttonStyle={styles.linkButton}
+                                            titleStyle={styles.linkTitle}
+                                            containerStyle={styles.responseContainer}
+                                        />
+                                    </>
+                                )}
+                                {instruction.proximaAcao === 'AGENDAR_CONSULTA' && (
                                     <Button
                                         title="Continuar"
-                                        onPress={() => {
-                                            if (index < perguntas.length - 1) {
-                                                setIndex(index + 1);
-                                                setStep('QUESTION');
-                                            } else {
-                                                setStep('SCHEDULE');
-                                            }
-                                        }}
+                                        onPress={advanceToNextStep}
                                         buttonStyle={styles.continueButton}
                                         titleStyle={styles.continueTitle}
-                                        containerStyle={
-                                            styles.responseContainer
-                                        }
+                                        containerStyle={styles.responseContainer}
                                     />
                                 )}
                                 <Button
@@ -238,6 +243,7 @@ export default function ConsultasScreen() {
     );
 }
 
+// Seus estilos aqui...
 const styles = StyleSheet.create({
     flex: {
         flex: 1,
@@ -273,6 +279,7 @@ const styles = StyleSheet.create({
         color: colors.primary,
         marginBottom: 8,
         textAlign: 'center',
+        marginTop: 16,
     },
     questionScroll: {
         alignItems: 'stretch',
@@ -357,6 +364,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 8,
         padding: 16,
+        paddingTop: 40, // Espaço para o botão de fechar
     },
     stepItem: {
         backgroundColor: '#fafafa',

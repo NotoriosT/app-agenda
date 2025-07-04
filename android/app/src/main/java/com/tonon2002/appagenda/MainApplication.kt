@@ -1,4 +1,4 @@
-package com.tonon2002.appagenda
+package com.app
 
 import android.app.Application
 import android.content.res.Configuration
