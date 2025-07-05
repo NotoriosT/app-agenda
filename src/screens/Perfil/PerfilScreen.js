@@ -1,16 +1,39 @@
 // src/screens/Perfil/PerfilScreen.js
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, Card, Icon, Divider, Avatar } from 'react-native-elements';
+import { View, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { Text, Button, Icon, Avatar } from 'react-native-elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
+
+// Componente para cada item de informação do perfil
+const InfoRow = ({ icon, label, value }) => (
+    <View style={styles.fieldRow}>
+        <Icon
+            name={icon}
+            type="font-awesome-5"
+            size={20}
+            color={colors.primary}
+            containerStyle={styles.iconContainer}
+        />
+        <View style={styles.textGroup}>
+            <Text style={styles.fieldLabel}>{label}</Text>
+            <Text style={styles.fieldValue} numberOfLines={1} ellipsizeMode="tail">
+                {value || 'Não informado'}
+            </Text>
+        </View>
+    </View>
+);
 
 export default function PerfilScreen() {
     const { logout, municipe } = useAuth();
+    const insets = useSafeAreaInsets();
 
     if (!municipe) {
         return (
             <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={styles.loadingText}>Carregando perfil...</Text>
             </View>
         );
@@ -18,10 +41,10 @@ export default function PerfilScreen() {
 
     const initial = municipe.nome
         ? municipe.nome
-            .split(' ')
-            .map((s) => s[0])
-            .slice(0, 2)
-            .join('')
+              .split(' ')
+              .map((s) => s[0])
+              .slice(0, 2)
+              .join('')
         : '';
 
     const fields = [
@@ -35,52 +58,60 @@ export default function PerfilScreen() {
                     : null,
             icon: 'mobile-alt',
         },
-        { label: 'UPS', value: municipe.upsLogadaNome, icon: 'hospital' },
+        { label: 'Unidade de Saúde', value: municipe.upsLogadaNome, icon: 'hospital' },
         { label: 'Cartão SUS', value: municipe.cartaoSus, icon: 'hospital-symbol' },
     ];
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Card containerStyle={styles.profileCard} wrapperStyle={styles.profileWrapper}>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+            {/* Seção do Cabeçalho */}
+            <View style={styles.headerSection}>
                 <Avatar
-                    size="xlarge"
+                    size="large"
                     rounded
                     title={initial}
                     containerStyle={styles.avatar}
+                    titleStyle={styles.avatarTitle}
                 />
-                <Text h3 style={styles.nameText}>
+                <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">
                     {municipe.nome}
                 </Text>
-                <Text style={styles.subtitle}>Munícipe Cadastrado</Text>
-            </Card>
+                <Text style={styles.subtitle}>Munícipe de Esteio</Text>
+            </View>
 
-            <Card containerStyle={styles.infoCard}>
-                {fields.map((f, i) => (
-                    <View key={i} style={styles.fieldRow}>
-                        <Icon
-                            name={f.icon}
-                            type="font-awesome-5"
-                            size={20}
-                            color={colors.primary}
-                            containerStyle={styles.icon}
-                        />
-                        <View style={styles.textGroup}>
-                            <Text style={styles.fieldLabel}>{f.label}</Text>
-                            <Text style={styles.fieldValue}>{f.value || '—'}</Text>
-                        </View>
-                        {i < fields.length - 1 && <Divider style={styles.divider} />}
-                    </View>
+            {/* Seção de Informações com Scroll */}
+            <ScrollView 
+                style={styles.infoSection} 
+                contentContainerStyle={styles.infoContentContainer}
+                showsVerticalScrollIndicator={false}
+            >
+                {fields.map((field, index) => (
+                    <InfoRow
+                        key={index}
+                        icon={field.icon}
+                        label={field.label}
+                        value={field.value}
+                    />
                 ))}
-            </Card>
+            </ScrollView>
 
-            <Button
-                title="Sair do Aplicativo"
-                onPress={logout}
-                buttonStyle={styles.logoutButton}
-                icon={{ name: 'sign-out-alt', type: 'font-awesome-5', size: 18, color: 'white' }}
-                iconRight
-            />
-        </ScrollView>
+            {/* Seção do Botão (fixa no final) */}
+            <View style={[styles.footerSection, { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 }]}>
+                <Button
+                    title="Sair do Aplicativo"
+                    onPress={logout}
+                    buttonStyle={styles.logoutButton}
+                    titleStyle={styles.logoutButtonTitle}
+                    icon={{
+                        name: 'sign-out-alt',
+                        type: 'font-awesome-5',
+                        size: 18,
+                        color: 'white',
+                    }}
+                    iconRight
+                />
+            </View>
+        </View>
     );
 }
 
@@ -92,85 +123,99 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     loadingText: {
-        color: colors.text,
-        fontSize: 16,
+        ...typography.body1,
+        color: colors.textSecondary,
+        marginTop: 16,
     },
     container: {
-        flexGrow: 1,
-        padding: 20,
+        flex: 1,
         backgroundColor: colors.background,
-        alignItems: 'center',
     },
-    profileCard: {
-        alignItems: 'center',
-        borderRadius: 16,
-        paddingVertical: 30,
-        width: '100%',
+    // Seção do Cabeçalho
+    headerSection: {
         backgroundColor: colors.primaryLight,
-        marginBottom: 20,
-    },
-    profileWrapper: {
-        margin: 0,
-        padding: 0,
+        paddingHorizontal: 24,
+        paddingBottom: 24,
+        paddingTop: 20,
+        alignItems: 'center',
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
     },
     avatar: {
         backgroundColor: colors.primary,
-        marginBottom: 15,
+        borderWidth: 3,
+        borderColor: colors.white,
+    },
+    avatarTitle: {
+        ...typography.h2,
     },
     nameText: {
+        ...typography.h2,
         color: colors.primaryDark,
-        marginBottom: 5,
+        marginTop: 16,
+        textAlign: 'center',
     },
     subtitle: {
+        ...typography.body1,
         color: colors.textSecondary,
-        fontSize: 14,
+        marginTop: 4,
     },
-    infoCard: {
-        width: '100%',
-        borderRadius: 12,
-        padding: 15,
-        marginBottom: 30,
-        backgroundColor: colors.cardBackground,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
+    // Seção de Informações
+    infoSection: {
+        flex: 1,
+        
+    },
+    infoContentContainer: {
+        paddingHorizontal: 20,
+        paddingTop: 40,
+        paddingBottom: 24,
     },
     fieldRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
+        backgroundColor: colors.white,
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        
+    
     },
-    icon: {
-        width: 30,
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: colors.primaryLight,
+        justifyContent: 'center',
         alignItems: 'center',
+        marginRight: 16,
     },
     textGroup: {
-        marginLeft: 12,
         flex: 1,
     },
     fieldLabel: {
-        fontSize: 13,
-        fontWeight: 'bold',
+        ...typography.caption,
         color: colors.textSecondary,
+        textTransform: 'uppercase',
+        marginBottom: 2,
     },
     fieldValue: {
-        fontSize: 16,
+        ...typography.body1,
         color: colors.text,
-        marginTop: 2,
+        fontWeight: '600',
     },
-    divider: {
-        position: 'absolute',
-        bottom: 0,
-        left: 40,
-        right: 0,
-        backgroundColor: colors.divider,
+    // Seção do Rodapé
+    footerSection: {
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        backgroundColor: colors.background,
     },
     logoutButton: {
         backgroundColor: colors.error,
-        width: '100%',
-        borderRadius: 10,
+        borderRadius: 12,
         paddingVertical: 14,
+    },
+    logoutButtonTitle: {
+        ...typography.button,
+        marginRight: 10,
     },
 });
