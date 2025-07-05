@@ -1,6 +1,8 @@
+// src/navigation/MainTabNavigator.js
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // 1. Importar o hook
 
 // Telas
 import HomeScreen from '../screens/Home/HomeScreen';
@@ -14,10 +16,12 @@ import { colors } from '../theme/colors';
 const Tab = createBottomTabNavigator();
 
 export default function MainTabNavigator() {
+  const insets = useSafeAreaInsets(); // 2. Obter os valores da área segura
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerShown: false, // Mantém os cabeçalhos personalizados de cada tela
+        headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
@@ -39,17 +43,16 @@ export default function MainTabNavigator() {
           paddingBottom: 5,
           fontSize: 12,
         },
+        // 3. Aplicar o ajuste de responsividade no estilo da barra
         tabBarStyle: {
-          height: 60,
+          height: 60 + insets.bottom, // A altura total considera a área segura
+          paddingBottom: insets.bottom, // Adiciona um preenchimento inferior
           paddingTop: 5,
         },
       })}
     >
-      {/* Atribuindo os componentes corretos para cada aba */}
       <Tab.Screen name="Início" component={HomeScreen} />
       <Tab.Screen name="Consultas" component={ConsultasScreen} />
-
-      {/* As outras abas permanecem como estavam */}
       <Tab.Screen name="Mensagens" component={MensagensScreen} />
       <Tab.Screen name="Perfil" component={PerfilScreen} />
     </Tab.Navigator>

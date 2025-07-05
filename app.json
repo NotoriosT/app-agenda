@@ -16,10 +16,14 @@
       "supportsTablet": true
     },
     "android": {
-      "icon": "./assets/icon.png", 
+      "icon": "./assets/icon.png",
       "backgroundColor": "#ffffff",
       "edgeToEdgeEnabled": true,
-      "package": "com.tonon2002.appagenda"
+      "package": "com.tonon2002.appagenda",
+      "navigationBar": {
+        "backgroundColor": "#16307F",
+        "barStyle": "light-content"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
